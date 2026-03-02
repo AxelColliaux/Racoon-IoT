@@ -1,0 +1,10 @@
+# Wokwi project for SmartPosture / CorpSafe v1
+# Arduino Uno + simulated MPU-6050 (optional; sketch works with simulated data if not present)
+
+[wokwi]
+version = 1
+firmware = "smartposture.ino"
+
+# Optional: add MPU6050 when available in Wokwi parts
+# [wokwi.parts]
+# mpu = { type = "board", name = "..." }

@@ -1,0 +1,13 @@
+# Optionnel : broker MQTT pour tests avec gateway en mode MQTT
+# Lancer : docker compose up -d
+# Puis gateway avec MQTT_BROKER=mqtt://localhost:1883
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    profiles:
+      - mqtt
