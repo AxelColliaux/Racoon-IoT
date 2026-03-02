@@ -1,9 +1,0 @@
-# Wokwi project for SmartPosture / CorpSafe v1
-# Compiler d'abord avec PlatformIO : pio run (dans le dossier embedded/)
-# Puis F1 → "Wokwi: Start Simulator"
-
-[wokwi]
-version = 1
-firmware = ".pio/build/uno/firmware.hex"
-elf = ".pio/build/uno/firmware.elf"
-rfc2217ServerPort = 4000
