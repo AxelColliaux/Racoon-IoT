@@ -141,6 +141,110 @@
 .alerts-list li.severity-warning { color: #eab308; }
 .alerts-list li.severity-alert { color: #ef4444; }
 
+/* ---- 3D Simulation ---- */
+
+.vest-sim__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.vest-sim__title {
+  font-size: 1rem;
+  margin: 0;
+  color: var(--color-muted, #94a3b8);
+  font-weight: 600;
+}
+
+.vest-sim__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+}
+.vest-sim__badge.sev--ok    { background: #166534; color: #dcfce7; }
+.vest-sim__badge.sev--warn  { background: #854d0e; color: #fef9c3; }
+.vest-sim__badge.sev--alert { background: #991b1b; color: #fecaca; }
+
+.vest-sim__canvas {
+  width: 100%;
+  height: 380px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* angle readout row */
+.vest-sim__angles {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.vest-sim__angle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.vest-sim__angle-label {
+  font-size: 0.82rem;
+  color: var(--color-muted, #94a3b8);
+}
+
+.vest-sim__angle-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.vest-sim__angle-val.sev--ok    { color: #22c55e; }
+.vest-sim__angle-val.sev--warn  { color: #eab308; }
+.vest-sim__angle-val.sev--alert { color: #ef4444; }
+
+/* legend */
+.vest-sim__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--color-muted, #94a3b8);
+}
+
+.vest-sim__leg {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.vest-sim__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.vest-sim__dot.sev--ok    { background: #22c55e; }
+.vest-sim__dot.sev--warn  { background: #eab308; }
+.vest-sim__dot.sev--alert { background: #ef4444; }
+
+.vest-sim__sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.simulation-card {
+  min-height: 480px;
+}
+
 @media (prefers-color-scheme: light) {
   .card {
     --card-bg: #f8fafc;

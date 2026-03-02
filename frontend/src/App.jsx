@@ -4,6 +4,7 @@ import { loadHistory } from './api/history';
 import { PostureIndicator } from './components/PostureIndicator';
 import { AlertsList } from './components/AlertsList';
 import { PostureChart } from './components/PostureChart';
+import { VestSimulation3D } from './components/VestSimulation3D';
 import './App.css';
 
 function App() {
@@ -41,6 +42,10 @@ function App() {
 
         <section className="card chart-card">
           <PostureChart history={history} />
+        </section>
+
+        <section className="card simulation-card">
+          <VestSimulation3D posture={lastPosture} />
         </section>
 
         <section className="card alerts-card">
