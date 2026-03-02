@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "author": "Anonymous maker",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": -28.2, "left": 47.4, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "imu1", "top": 243.82, "left": 338.32, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "imu2", "top": 243.82, "left": 100, "attrs": {} }
+  ],
+  "connections": [
+    ["uno:A4", "imu1:SDA", "green", ["v0"]],
+    ["uno:A5", "imu1:SCL", "yellow", ["v0"]],
+    ["uno:5V", "imu1:VCC", "red", ["v0"]],
+    ["uno:GND", "imu1:GND", "white", ["v0"]],
+    ["uno:A4", "imu2:SDA", "green", ["v0"]],
+    ["uno:A5", "imu2:SCL", "yellow", ["v0"]],
+    ["uno:5V", "imu2:VCC", "red", ["v0"]],
+    ["uno:GND", "imu2:GND", "white", ["v0"]],
+    ["uno:5V", "imu2:AD0", "red", ["v0"]]
+  ],
+  "serialMonitor": { "display": "always" },
+  "dependencies": {}
+}
