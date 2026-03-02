@@ -10,7 +10,7 @@
     ["uno:A4", "imu1:SDA", "green", [ "v0" ]],
     ["uno:A5", "imu1:SCL", "yellow", [ "v0" ] ],
     ["uno:5V", "imu1:VCC", "red", [ "v0" ] ],
-    ["uno:GND.2", "imu1:GND", "white", [ "v0" ] ]
+    ["uno:GND", "imu1:GND", "white", [ "v0" ] ]
   ],
   "serialMonitor": { "display": "always" },
   "dependencies": {}
