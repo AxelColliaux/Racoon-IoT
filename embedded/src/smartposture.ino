@@ -15,7 +15,8 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
-Adafruit_MPU6050 mpu;
+Adafruit_MPU6050 mpu1;  // I2C 0x68 (AD0 à GND)
+Adafruit_MPU6050 mpu2;  // I2C 0x69 (AD0 à VCC)
 #else
 // Simulation : pas de lib externe
 #endif
@@ -33,13 +34,20 @@ void setup() {
   delay(100);
 
 #ifdef USE_MPU6050
-  if (!mpu.begin()) {
-    Serial.println("{\"error\":\"MPU6050 not found\"}");
+  if (!mpu1.begin(0x68)) {
+    Serial.println("{\"error\":\"MPU6050 #1 (0x68) not found\"}");
     while (1) delay(10);
   }
-  mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
-  mpu.setGyroRange(MPU6050_RANGE_250_DEG);
-  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  if (!mpu2.begin(0x69)) {
+    Serial.println("{\"error\":\"MPU6050 #2 (0x69) not found\"}");
+    while (1) delay(10);
+  }
+  mpu1.setAccelerometerRange(MPU6050_RANGE_2_G);
+  mpu1.setGyroRange(MPU6050_RANGE_250_DEG);
+  mpu1.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  mpu2.setAccelerometerRange(MPU6050_RANGE_2_G);
+  mpu2.setGyroRange(MPU6050_RANGE_250_DEG);
+  mpu2.setFilterBandwidth(MPU6050_BAND_21_HZ);
 #else
   randomSeed(analogRead(0));
 #endif
@@ -53,14 +61,15 @@ void loop() {
   float ax, ay, az, gx, gy, gz;
 
 #ifdef USE_MPU6050
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
-  ax = a.acceleration.x;
-  ay = a.acceleration.y;
-  az = a.acceleration.z;
-  gx = g.gyro.x * 57.2958f;  // rad/s -> deg/s
-  gy = g.gyro.y * 57.2958f;
-  gz = g.gyro.z * 57.2958f;
+  sensors_event_t a1, g1, temp1, a2, g2, temp2;
+  mpu1.getEvent(&a1, &g1, &temp1);
+  mpu2.getEvent(&a2, &g2, &temp2);
+  ax = (a1.acceleration.x + a2.acceleration.x) / 2.f;
+  ay = (a1.acceleration.y + a2.acceleration.y) / 2.f;
+  az = (a1.acceleration.z + a2.acceleration.z) / 2.f;
+  gx = ((g1.gyro.x + g2.gyro.x) / 2.f) * 57.2958f;  // rad/s -> deg/s
+  gy = ((g1.gyro.y + g2.gyro.y) / 2.f) * 57.2958f;
+  gz = ((g1.gyro.z + g2.gyro.z) / 2.f) * 57.2958f;
 #else
   // Données simulées : posture debout légèrement variable + bruit
   // Accel en g : Z ≈ 1 (gravité), X/Y ≈ 0 au repos
@@ -75,7 +84,7 @@ void loop() {
   if (phase > 6.28318f) phase -= 6.28318f;
 #endif
 
-  // JSON une ligne pour parsing facile côté gateway
+  // JSON une ligne pour parsing facile côté gateway (moyenne 2 capteurs)
   Serial.print("{\"accel\":{\"x\":");
   Serial.print(ax, 4);
   Serial.print(",\"y\":");
@@ -90,5 +99,6 @@ void loop() {
   Serial.print(gz, 2);
   Serial.print("},\"ts\":");
   Serial.print(millis());
-  Serial.println("}");
+  Serial.print(",\"sensors\":2}");
+  Serial.println();
 }
