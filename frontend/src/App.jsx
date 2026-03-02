@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePostureWebSocket } from './api/usePostureWebSocket';
+import { loadHistory } from './api/history';
 import { PostureIndicator } from './components/PostureIndicator';
 import { AlertsList } from './components/AlertsList';
 import { PostureChart } from './components/PostureChart';
@@ -8,10 +9,20 @@ import './App.css';
 function App() {
   const { lastPosture, alerts, connected } = usePostureWebSocket();
   const [history, setHistory] = useState([]);
+  const [persistedAlerts, setPersistedAlerts] = useState([]);
+
+  useEffect(() => {
+    loadHistory({ telemetryLimit: 200, eventsLimit: 50 })
+      .then(({ telemetry, events }) => {
+        setHistory(telemetry);
+        setPersistedAlerts(events);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (lastPosture) {
-      setHistory((prev) => [...prev, lastPosture].slice(-100));
+      setHistory((prev) => [...prev, lastPosture].slice(-200));
     }
   }, [lastPosture]);
 
@@ -34,7 +45,7 @@ function App() {
 
         <section className="card alerts-card">
           <h2>Alertes récentes</h2>
-          <AlertsList alerts={alerts} />
+          <AlertsList alerts={[...persistedAlerts, ...alerts]} />
         </section>
       </main>
     </div>

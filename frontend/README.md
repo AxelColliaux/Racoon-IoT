@@ -16,6 +16,7 @@ cd frontend && npm install
 ## Configuration
 
 - `VITE_WS_URL` : URL WebSocket du backend (défaut : `ws://localhost:3000/ws` en dev).
+- `VITE_API_URL` : URL de l’API REST du backend (défaut : `http://localhost:3000`) pour le chargement de l’historique au démarrage.
 
 ## Lancement
 
@@ -23,7 +24,7 @@ cd frontend && npm install
 npm run dev
 ```
 
-Ouvrir http://localhost:5173. Le dashboard se connecte au WebSocket du backend et affiche les postures et alertes en temps réel.
+Ouvrir http://localhost:5173. Au chargement, le dashboard récupère l’historique persistant (télémétrie et alertes) depuis l’API, puis se connecte au WebSocket pour les mises à jour en temps réel (mock ou TCP).
 
 ## Build
 
