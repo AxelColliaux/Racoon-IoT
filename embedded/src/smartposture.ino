@@ -8,7 +8,7 @@
  */
 
 // Décommenter si MPU-6050 présent dans le simulateur (Wokwi)
-// #define USE_MPU6050
+#define USE_MPU6050
 
 #ifdef USE_MPU6050
 #include <Wire.h>
@@ -29,7 +29,8 @@ const float PHASE_STEP = 0.05f;
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial) { ; }
+  // Ne pas utiliser while(!Serial) : bloque indéfiniment dans le simulateur Wokwi
+  delay(100);
 
 #ifdef USE_MPU6050
   if (!mpu.begin()) {

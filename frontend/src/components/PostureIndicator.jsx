@@ -3,7 +3,10 @@ export function PostureIndicator({ posture, connected }) {
     return (
       <div className="posture-indicator posture-unknown">
         <span className="label">En attente de données</span>
-        {!connected && <span className="badge disconnected">Déconnecté</span>}
+        {!connected && <span className="badge disconnected">Déconnecté — Vérifiez que le backend tourne (port 3000)</span>}
+        {connected && (
+          <span className="hint">Connecté. Données : gateway en mode mock (<code>npm run mock</code>) ou TCP avec Wokwi for VS Code (<code>npm run tcp</code> + simu démarrée).</span>
+        )}
       </div>
     );
   }

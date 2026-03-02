@@ -1,6 +1,6 @@
 # SmartPosture – Passerelle (Gateway)
 
-Réception des données (Serial, WebSocket Wokwi ou mock) et envoi vers le backend (HTTP POST ou MQTT).
+Réception des données (Serial, TCP Wokwi ou mock) et envoi vers le backend (HTTP POST ou MQTT).
 
 ## Prérequis
 
@@ -17,17 +17,18 @@ cd gateway && npm install
 
 Variables d'environnement (ou fichier `.env`) :
 
-| Variable       | Description                          | Défaut                    |
-|----------------|--------------------------------------|---------------------------|
-| `MODE`         | `mock` \| `serial` \| `websocket`    | `mock`                    |
-| `API_URL`      | URL d'ingestion backend              | `http://localhost:3000/api/telemetry` |
-| `MQTT_BROKER`  | URL broker MQTT (ex. `mqtt://localhost:1883`) | —                  |
-| `SERIAL_PORT`  | Port série (mode serial)             | —                         |
-| `WOKWI_WS_URL` | URL WebSocket Wokwi (mode websocket) | —                         |
-| `INTERVAL_MS`  | Intervalle envoi (mock) en ms        | `200`                     |
-| `DEVICE_ID`    | Identifiant appareil                 | `gateway-1`               |
-| `OPERATOR_ID`  | Identifiant opérateur (optionnel)    | —                         |
-| `ZONE`         | Zone / chantier (optionnel)          | —                         |
+| Variable          | Description                          | Défaut                    |
+|-------------------|--------------------------------------|---------------------------|
+| `MODE`            | `mock` \| `serial` \| `tcp`          | `mock`                    |
+| `API_URL`         | URL d'ingestion backend              | `http://localhost:3000/api/telemetry` |
+| `MQTT_BROKER`     | URL broker MQTT (ex. `mqtt://localhost:1883`) | —                  |
+| `SERIAL_PORT`     | Port série (mode serial)             | —                         |
+| `WOKWI_TCP_HOST`  | Hôte TCP (mode tcp, Wokwi for VS Code) | `localhost`             |
+| `WOKWI_TCP_PORT`  | Port TCP (ex. 4000 si `rfc2217ServerPort` dans wokwi.toml) | `4000` |
+| `INTERVAL_MS`     | Intervalle envoi (mock) en ms        | `200`                     |
+| `DEVICE_ID`       | Identifiant appareil                 | `gateway-1`               |
+| `OPERATOR_ID`     | Identifiant opérateur (optionnel)    | —                         |
+| `ZONE`            | Zone / chantier (optionnel)          | —                         |
 
 ## Lancement
 
@@ -40,8 +41,10 @@ npm start
 # Mode Serial (pont avec Arduino / simulateur)
 SERIAL_PORT=/dev/tty.usbserial-XXXX npm run serial
 
-# Mode WebSocket (Wokwi)
-WOKWI_WS_URL=wss://... npm run ws
+# Mode TCP (Wokwi for VS Code : rfc2217ServerPort = 4000 dans wokwi.toml)
+npm run tcp
+# ou avec host/port personnalisés :
+WOKWI_TCP_PORT=4000 npm run tcp
 ```
 
 Sans `MQTT_BROKER`, les données sont envoyées en HTTP POST vers `API_URL`.

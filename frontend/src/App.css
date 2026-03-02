@@ -77,6 +77,21 @@
   color: #fecaca;
 }
 
+.posture-indicator .hint {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-muted, #64748b);
+}
+
+.posture-indicator .hint code {
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
 .posture-indicator.posture-ok .label { color: #22c55e; }
 .posture-indicator.posture-warning .label { color: #eab308; }
 .posture-indicator.posture-alert .label { color: #ef4444; }

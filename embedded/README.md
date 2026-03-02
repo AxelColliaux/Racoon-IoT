@@ -4,7 +4,7 @@ Code Arduino pour le gilet connecté CorpSafe v1. Lecture accéléromètre / gyr
 
 ## Simulateur
 
-- **Wokwi** : [Créer un projet](https://wokwi.com/projects/new/arduino-uno), coller le contenu de `smartposture.ino`, ajouter un Arduino Uno. Le Serial Monitor affichera le JSON.
+- **Wokwi (navigateur)** : [Créer un projet](https://wokwi.com/projects/new/arduino-uno), importer ou coller le code de `smartposture.ino` et le contenu de `diagram.json` (Arduino Uno + MPU6050 câblé en I2C). Démarrer la simulation puis ouvrir le Serial Monitor (115200 baud) : les lignes JSON s’affichent. Ne pas utiliser `while (!Serial)` dans le code (bloque dans le simulateur).
 - **Lien projet partagé** : après sauvegarde sur Wokwi, ajouter l’URL ici et dans le README racine du dépôt.
   - Exemple : `https://wokwi.com/projects/xxxxxxxx`
 
@@ -30,6 +30,24 @@ Une ligne JSON par trame, environ 5 Hz :
 - `accel` : accélération en g (X, Y, Z).
 - `gyro` : vitesse angulaire en °/s (X, Y, Z).
 - `ts` : timestamp Arduino `millis()`.
+
+## Mode TCP (Wokwi for VS Code)
+
+Pour que le Serial Monitor affiche le JSON et que la gateway reçoive les données en TCP :
+
+1. **Compiler le firmware** (une fois, ou après chaque modification du code) :
+   ```bash
+   cd embedded && pio run
+   ```
+   (Installer [PlatformIO](https://platformio.org/) si besoin : extension « PlatformIO IDE » dans VS Code, ou `pip install platformio`.)
+
+2. **Lancer la simulation** : dans VS Code, ouvrir le dossier `embedded/`, puis F1 → « Wokwi: Start Simulator ». Le Serial Monitor doit afficher les lignes JSON.
+
+3. **Lancer la gateway en TCP** : `cd gateway && npm run tcp`. Elle se connecte à `localhost:4000` et envoie les trames au backend.
+
+Sans étape 1, Wokwi n’exécute aucun code : le port TCP est ouvert mais aucun flux série n’est envoyé.
+
+**Wokwi dans le navigateur (wokwi.com)** n’ouvre pas de serveur TCP sur ta machine : dans ce cas, utiliser le mode **mock** de la gateway ou le copier-coller (mode manuel).
 
 ## Mode manuel (pont gateway)
 
