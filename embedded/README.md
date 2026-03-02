@@ -10,26 +10,31 @@ Code Arduino pour le gilet connecté CorpSafe v1. Lecture accéléromètre / gyr
 
 ## Câblage (si MPU-6050 utilisé dans le simulateur)
 
-| MPU-6050 | Arduino Uno |
-|----------|-------------|
-| VCC      | 3.3V        |
-| GND      | GND         |
-| SCL      | A5 (SCL)    |
-| SDA      | A4 (SDA)    |
+Le montage peut utiliser **1 ou 2** MPU-6050 sur le même bus I2C pour améliorer la précision (moyenne des mesures). Avec 2 capteurs, le firmware envoie une seule trame JSON (accel/gyro moyennés).
 
-Dans le code, définir `#define USE_MPU6050` et inclure la librairie Adafruit MPU6050 si disponible dans l’environnement.
+| MPU-6050   | Arduino Uno | Note                    |
+|------------|-------------|-------------------------|
+| VCC        | 5V          | (ou 3.3V)               |
+| GND        | GND         |                         |
+| SCL        | A5 (SCL)    | Partagé si 2 capteurs   |
+| SDA        | A4 (SDA)    | Partagé si 2 capteurs   |
+| AD0        | GND ou NC   | Capteur 1 → adresse 0x68 (placement corps : entre les omoplates) |
+| AD0        | 5V          | Capteur 2 uniquement → adresse 0x69 (placement corps : région lombaire) |
+
+Dans le code, définir `#define USE_MPU6050` et inclure la librairie Adafruit MPU6050. Avec 2 capteurs, le sketch initialise `mpu1.begin(0x68)` et `mpu2.begin(0x69)`, lit les deux puis moyenne accel et gyro avant envoi JSON. Sur le gilet : capteur 1 = omoplates, capteur 2 = lombaires (voir [docs/vest-placement.md](../docs/vest-placement.md)).
 
 ## Format de sortie (Serial)
 
 Une ligne JSON par trame, environ 5 Hz :
 
 ```json
-{"accel":{"x":0.02,"y":0.01,"z":0.98},"gyro":{"x":1.2,"y":-0.5,"z":0.1},"ts":12345}
+{"accel":{"x":0.02,"y":0.01,"z":0.98},"gyro":{"x":1.2,"y":-0.5,"z":0.1},"ts":12345,"sensors":2}
 ```
 
-- `accel` : accélération en g (X, Y, Z).
-- `gyro` : vitesse angulaire en °/s (X, Y, Z).
+- `accel` : accélération en g (X, Y, Z), moyennée si 2 capteurs.
+- `gyro` : vitesse angulaire en °/s (X, Y, Z), moyennée si 2 capteurs.
 - `ts` : timestamp Arduino `millis()`.
+- `sensors` : (optionnel) nombre de capteurs utilisés (2 si double MPU-6050).
 
 ## Mode TCP (Wokwi for VS Code)
 
@@ -57,5 +62,6 @@ Sans étape 1, Wokwi n’exécute aucun code : le port TCP est ouvert mais aucun
 
 ## Fichiers
 
-- `smartposture.ino` : sketch principal (simulation ou MPU-6050 si `USE_MPU6050` défini).
-- `wokwi.toml` : configuration optionnelle du projet Wokwi.
+- `src/smartposture.ino` : sketch principal (simulation ou 1/2 MPU-6050 si `USE_MPU6050` défini). Avec 2 capteurs, lecture I2C 0x68 et 0x69 puis moyenne.
+- `diagram.json` : schéma Wokwi (Arduino Uno + 2× MPU-6050 avec AD0 du second à 5V).
+- `wokwi.toml` : configuration projet Wokwi (firmware compilé .hex).

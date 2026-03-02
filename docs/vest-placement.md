@@ -2,7 +2,13 @@
 
 ## Recommandation d’emplacement
 
-L’unité électronique (microcontrôleur + capteur MPU-6050) est positionnée au **haut du dos, entre les omoplates**, au centre du gilet.
+L’unité électronique (microcontrôleur + capteur(s) MPU-6050) est positionnée au **haut du dos, entre les omoplates**, au centre du gilet. Le montage peut utiliser **deux** MPU-6050 (même bus I2C, adresses 0x68 et 0x69) pour améliorer la précision.
+
+**Placement des 2 capteurs sur le corps (recommandé)** :
+- **Capteur 1 (I2C 0x68)** : **entre les omoplates**, au centre du haut du dos — mesure l’inclinaison du haut du tronc.
+- **Capteur 2 (I2C 0x69)** : **région lombaire** (bas du dos), le long de la colonne — mesure l’inclinaison du bas du tronc et complète la détection de flexion (dos courbé).
+
+Les deux positions (omoplates + lombaires) permettent de mieux capturer la posture du tronc (flexion avant, inclinaison latérale) tout en limitant les artefacts. Le firmware fusionne les mesures (moyenne) avant envoi ; le câblage I2C peut longer le dos entre les deux capteurs.
 
 ### Justification
 
