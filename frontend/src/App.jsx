@@ -1,57 +1,43 @@
-import { useState, useEffect } from 'react';
-import { usePostureWebSocket } from './api/usePostureWebSocket';
-import { loadHistory } from './api/history';
-import { PostureIndicator } from './components/PostureIndicator';
-import { AlertsList } from './components/AlertsList';
-import { PostureChart } from './components/PostureChart';
-import { VestSimulation3D } from './components/VestSimulation3D';
+import { useState } from 'react';
+import { isAuthenticated, clearAuth, getUsername } from './api/auth';
+import { LoginPage } from './components/LoginPage';
+import Dashboard from './Dashboard';
 import './App.css';
 
 function App() {
-  const { lastPosture, alerts, connected } = usePostureWebSocket();
-  const [history, setHistory] = useState([]);
-  const [persistedAlerts, setPersistedAlerts] = useState([]);
+  const [authed, setAuthed] = useState(isAuthenticated());
 
-  useEffect(() => {
-    loadHistory({ telemetryLimit: 200, eventsLimit: 50 })
-      .then(({ telemetry, events }) => {
-        setHistory(telemetry);
-        setPersistedAlerts(events);
-      })
-      .catch(() => {});
-  }, []);
+  function handleLogout() {
+    clearAuth();
+    setAuthed(false);
+  }
 
-  useEffect(() => {
-    if (lastPosture) {
-      setHistory((prev) => [...prev, lastPosture].slice(-200));
-    }
-  }, [lastPosture]);
+  if (!authed) {
+    return <LoginPage onAuth={() => setAuthed(true)} />;
+  }
 
   return (
     <div className="app">
       <header className="header">
         <h1>SmartPosture – CorpSafe v1</h1>
-        <p className="subtitle">Dashboard HSE – Analyse posturale temps réel</p>
+        <div className="header-right">
+          <div className="user-info">
+            <span className="user-avatar">{getUsername()?.charAt(0).toUpperCase()}</span>
+            <span className="user-badge">{getUsername()}</span>
+          </div>
+          <button className="logout-btn" onClick={handleLogout}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Déconnexion
+          </button>
+        </div>
       </header>
-
+      <p className="subtitle">Dashboard HSE – Analyse posturale temps réel</p>
       <main className="main">
-        <section className="card posture-card">
-          <h2>Posture actuelle</h2>
-          <PostureIndicator posture={lastPosture} connected={connected} />
-        </section>
-
-        <section className="card chart-card">
-          <PostureChart history={history} />
-        </section>
-
-        <section className="card simulation-card">
-          <VestSimulation3D posture={lastPosture} />
-        </section>
-
-        <section className="card alerts-card">
-          <h2>Alertes récentes</h2>
-          <AlertsList alerts={[...persistedAlerts, ...alerts]} />
-        </section>
+        <Dashboard />
       </main>
     </div>
   );

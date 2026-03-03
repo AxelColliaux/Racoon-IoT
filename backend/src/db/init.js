@@ -6,11 +6,15 @@ async function run() {
   const db = dbModule.getDb();
   const telemetryCol = db.collection('telemetry');
   const postureCol = db.collection('posture_events');
+  const usersCol = db.collection('users');
   await telemetryCol.createIndex({ ts: -1 });
   await telemetryCol.createIndex({ device_id: 1 });
   await postureCol.createIndex({ ts: -1 });
   await postureCol.createIndex({ device_id: 1 });
-  console.log('MongoDB indexes created (telemetry, posture_events)');
+  await usersCol.createIndex({ username: 1 }, { unique: true });
+  const vestsCol = db.collection('vests');
+  await vestsCol.createIndex({ vest_id: 1 }, { unique: true });
+  console.log('MongoDB indexes created (telemetry, posture_events, users, vests)');
   process.exit(0);
 }
 

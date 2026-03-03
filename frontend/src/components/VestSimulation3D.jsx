@@ -321,9 +321,8 @@ export function VestSimulation3D({ posture }) {
 
   return (
     <div className="vest-sim">
-      {/* Header */}
+      {/* Severity badge */}
       <div className="vest-sim__head">
-        <h3 className="vest-sim__title">Simulation 3D du gilet</h3>
         <span className={`vest-sim__badge ${sevClass}`}>{sevLabel}</span>
       </div>
 

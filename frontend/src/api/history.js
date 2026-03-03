@@ -4,6 +4,8 @@
  * données même après redémarrage (mock ou TCP).
  */
 
+import { authFetch } from './auth';
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const DEG_PER_RAD = 180 / Math.PI;
@@ -27,7 +29,7 @@ export function accelToTiltDeg(ax, ay, az) {
  * Les lignes sont renvoyées par le backend en ordre ts DESC → on inverse pour avoir ancien → récent.
  */
 export async function fetchTelemetryHistory(limit = 200) {
-  const res = await fetch(`${API_BASE}/api/telemetry?limit=${limit}`);
+  const res = await authFetch(`${API_BASE}/api/telemetry?limit=${limit}`);
   if (!res.ok) return [];
   const rows = await res.json();
   const points = rows.map((r) => {
@@ -41,7 +43,7 @@ export async function fetchTelemetryHistory(limit = 200) {
  * Récupère les N derniers événements de posture (alertes) pour l'affichage.
  */
 export async function fetchPostureEventsHistory(limit = 50) {
-  const res = await fetch(`${API_BASE}/api/posture-events?limit=${limit}`);
+  const res = await authFetch(`${API_BASE}/api/posture-events?limit=${limit}`);
   if (!res.ok) return [];
   const rows = await res.json();
   return rows.map((r) => ({
