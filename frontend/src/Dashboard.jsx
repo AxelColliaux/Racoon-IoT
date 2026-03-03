@@ -44,12 +44,12 @@ export default function Dashboard() {
   // sim: which single vest to show in 3D
   const [simVest, setSimVest] = useState(ALL);
 
-  /* load persisted data + vests */
+  /* load persisted data + vests (history from DB so chart shows evolution after reload) */
   useEffect(() => {
     loadHistory({ telemetryLimit: 200, eventsLimit: 50 })
       .then(({ telemetry, events }) => {
-        setHistory(telemetry);
-        setPersistedAlerts(events);
+        if (telemetry.length > 0) setHistory(telemetry);
+        if (events.length > 0) setPersistedAlerts(events);
       })
       .catch(() => {});
     loadVests();
@@ -104,11 +104,13 @@ export default function Dashboard() {
     ? allAlerts
     : allAlerts.filter((a) => filterVests.includes(a.deviceId));
 
-  // chart history filtered
+  // chart history filtered : combine persisted history (from DB) + live per-vest history
   const filteredHistory = useMemo(() => {
     if (isAll) return history;
-    const merged = filterVests.flatMap((id) => perVestHistory[id] || []);
-    return merged.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0)).slice(-200);
+    const fromDb = history.filter((p) => p.deviceId && filterVests.includes(p.deviceId));
+    const fromLive = filterVests.flatMap((id) => perVestHistory[id] || []);
+    const merged = [...fromDb, ...fromLive].sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0)).slice(-200);
+    return merged;
   }, [isAll, filterVests, history, perVestHistory]);
 
   // Build unified list of vest options (registered + live unregistered)

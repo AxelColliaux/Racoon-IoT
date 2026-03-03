@@ -34,7 +34,12 @@ export async function fetchTelemetryHistory(limit = 200) {
   const rows = await res.json();
   const points = rows.map((r) => {
     const { tiltForward, tiltLateral } = accelToTiltDeg(r.accel_x, r.accel_y, r.accel_z);
-    return { tiltForward, tiltLateral, ts: r.ts };
+    return {
+      tiltForward,
+      tiltLateral,
+      ts: r.ts,
+      deviceId: r.device_id ?? null,
+    };
   });
   return points.reverse();
 }
