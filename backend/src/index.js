@@ -3,6 +3,7 @@ const http = require('node:http');
 const express = require('express');
 const cors = require('cors');
 const { WebSocketServer } = require('ws');
+const { connect } = require('./db');
 const { registerRoutes, setBroadcast } = require('./api/telemetry');
 const { startMqttSubscriber } = require('./mqtt-subscriber');
 
@@ -34,6 +35,14 @@ setBroadcast(broadcast);
 
 startMqttSubscriber(process.env.MQTT_BROKER);
 
-server.listen(PORT, () => {
-  console.log('SmartPosture backend listening on', PORT, '| WebSocket /ws');
+async function start() {
+  await connect();
+  server.listen(PORT, () => {
+    console.log('SmartPosture backend listening on', PORT, '| WebSocket /ws');
+  });
+}
+
+start().catch((err) => {
+  console.error('Failed to start:', err.message);
+  process.exitCode = 1;
 });

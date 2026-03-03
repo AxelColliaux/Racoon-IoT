@@ -1,26 +1,29 @@
 # SmartPosture – Backend
 
-API REST, base SQLite, moteur de détection de posture et WebSocket pour le dashboard temps réel.
+API REST, base MongoDB, moteur de détection de posture et WebSocket pour le dashboard temps réel.
 
 ## Prérequis
 
 - Node.js 18+
+- MongoDB (local ou Atlas) et une URL de connexion
 
 ## Installation
 
 ```bash
 cd backend && npm install
-npm run init-db
 ```
+
+Définir `MONGODB_URI` (voir Configuration). Optionnel : `npm run init-db` pour créer les index MongoDB.
 
 ## Configuration
 
-| Variable      | Description              | Défaut        |
-|---------------|--------------------------|---------------|
-| `PORT`        | Port HTTP                | `3000`        |
-| `DB_PATH`     | Chemin fichier SQLite    | `data/smartposture.db` |
-| `MQTT_BROKER` | URL broker MQTT (optionnel) | —          |
-| `MQTT_TOPIC`  | Topic MQTT télémetrie    | `smartposture/telemetry` |
+| Variable           | Description                    | Défaut           |
+|--------------------|--------------------------------|------------------|
+| `MONGODB_URI`      | **Obligatoire.** URL de connexion MongoDB (ex. `mongodb://localhost:27017` ou Atlas) | — |
+| `MONGODB_DB_NAME`  | Nom de la base MongoDB         | `smartposture`   |
+| `PORT`             | Port HTTP                      | `3000`           |
+| `MQTT_BROKER`      | URL broker MQTT (optionnel)    | —                |
+| `MQTT_TOPIC`       | Topic MQTT télémetrie          | `smartposture/telemetry` |
 
 ## Lancement
 

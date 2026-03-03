@@ -13,11 +13,9 @@ function startMqttSubscriber(brokerUrl) {
     });
   });
   client.on('message', (t, payload) => {
-    try {
-      handleTelemetry(payload.toString());
-    } catch (e) {
+    handleTelemetry(payload.toString()).catch((e) => {
       console.error('MQTT message error', e);
-    }
+    });
   });
   client.on('error', (err) => console.error('MQTT error', err));
   return client;

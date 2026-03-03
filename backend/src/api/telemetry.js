@@ -7,7 +7,7 @@ function setBroadcast(fn) {
   broadcastPosture = fn;
 }
 
-function handleTelemetry(payload) {
+async function handleTelemetry(payload) {
   const body = typeof payload === 'string' ? JSON.parse(payload) : payload;
   const deviceId = body.deviceId ?? 'unknown';
   const operatorId = body.operatorId ?? null;
@@ -25,7 +25,8 @@ function handleTelemetry(payload) {
     ts,
   };
 
-  insertTelemetry(row);
+  // Persistance : chaque position (télémétrie) est enregistrée en base
+  await insertTelemetry(row);
 
   const result = detect(row);
   const message = {
@@ -38,7 +39,8 @@ function handleTelemetry(payload) {
   broadcastPosture(message);
 
   if (result.shouldEmitAlert) {
-    insertPostureEvent({
+    // Persistance : chaque alerte posture est enregistrée en base
+    await insertPostureEvent({
       deviceId,
       operatorId,
       zone,
@@ -53,24 +55,37 @@ function handleTelemetry(payload) {
 }
 
 function registerRoutes(app) {
-  app.post('/api/telemetry', (req, res) => {
+  app.post('/api/telemetry', async (req, res) => {
     try {
-      handleTelemetry(req.body);
+      await handleTelemetry(req.body);
       res.status(204).end();
     } catch (err) {
       console.error(err);
-      res.status(400).json({ error: err.message });
+      const status = err.message && err.message.includes('JSON') ? 400 : 500;
+      res.status(status).json({ error: err.message });
     }
   });
 
-  app.get('/api/telemetry', (req, res) => {
-    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
-    res.json(getRecentTelemetry(limit));
+  app.get('/api/telemetry', async (req, res) => {
+    try {
+      const limit = Math.min(Number.parseInt(req.query.limit, 10) || 100, 500);
+      const data = await getRecentTelemetry(limit);
+      res.json(data);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.get('/api/posture-events', (req, res) => {
-    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
-    res.json(getRecentPostureEvents(limit));
+  app.get('/api/posture-events', async (req, res) => {
+    try {
+      const limit = Math.min(Number.parseInt(req.query.limit, 10) || 50, 200);
+      const data = await getRecentPostureEvents(limit);
+      res.json(data);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.get('/api/health', (req, res) => {

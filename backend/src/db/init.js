@@ -1,15 +1,20 @@
-const Database = require('better-sqlite3');
-const fs = require('fs');
-const path = require('path');
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+const dbModule = require('./index');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/smartposture.db');
-const schemaPath = path.join(__dirname, 'schema.sql');
+async function run() {
+  await dbModule.connect();
+  const db = dbModule.getDb();
+  const telemetryCol = db.collection('telemetry');
+  const postureCol = db.collection('posture_events');
+  await telemetryCol.createIndex({ ts: -1 });
+  await telemetryCol.createIndex({ device_id: 1 });
+  await postureCol.createIndex({ ts: -1 });
+  await postureCol.createIndex({ device_id: 1 });
+  console.log('MongoDB indexes created (telemetry, posture_events)');
+  process.exit(0);
+}
 
-const dir = path.dirname(dbPath);
-if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-const db = new Database(dbPath);
-const schema = fs.readFileSync(schemaPath, 'utf8');
-db.exec(schema);
-console.log('Database initialized at', dbPath);
-db.close();
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

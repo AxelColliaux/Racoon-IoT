@@ -1,74 +1,90 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const { MongoClient } = require('mongodb');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/smartposture.db');
-const dir = path.dirname(dbPath);
-if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+const MONGODB_URI = process.env.MONGODB_URI;
+const DB_NAME = process.env.MONGODB_DB_NAME || 'smartposture';
 
+let client = null;
 let db = null;
 
-function getDb() {
-  if (!db) {
-    db = new Database(dbPath);
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    try {
-      db.exec(schema);
-    } catch (e) {
-      // tables may already exist
-    }
+async function connect() {
+  if (db) return db;
+  if (!MONGODB_URI) {
+    const err = new Error('MONGODB_URI is required');
+    console.error(err.message);
+    throw err;
   }
+  client = new MongoClient(MONGODB_URI);
+  await client.connect();
+  db = client.db(DB_NAME);
+
+  const telemetryCol = db.collection('telemetry');
+  const postureCol = db.collection('posture_events');
+  await telemetryCol.createIndex({ ts: -1 }).catch(() => {});
+  await telemetryCol.createIndex({ device_id: 1 }).catch(() => {});
+  await postureCol.createIndex({ ts: -1 }).catch(() => {});
+  await postureCol.createIndex({ device_id: 1 }).catch(() => {});
+
   return db;
 }
 
-function insertTelemetry(row) {
-  const d = getDb();
-  const stmt = d.prepare(`
-    INSERT INTO telemetry (device_id, operator_id, zone, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, ts)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(
-    row.deviceId ?? null,
-    row.operatorId ?? null,
-    row.zone ?? null,
-    row.accel.x, row.accel.y, row.accel.z,
-    row.gyro.x, row.gyro.y, row.gyro.z,
-    row.ts ?? Date.now()
-  );
+function getDb() {
+  if (!db) throw new Error('Database not connected: call connect() first');
+  return db;
 }
 
-function insertPostureEvent(row) {
-  const d = getDb();
-  const stmt = d.prepare(`
-    INSERT INTO posture_events (device_id, operator_id, zone, posture_type, severity, tilt_forward_deg, tilt_lateral_deg, ts)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(
-    row.deviceId ?? null,
-    row.operatorId ?? null,
-    row.zone ?? null,
-    row.postureType,
-    row.severity,
-    row.tiltForwardDeg ?? null,
-    row.tiltLateralDeg ?? null,
-    row.ts ?? Date.now()
-  );
+async function insertTelemetry(row) {
+  const col = getDb().collection('telemetry');
+  const doc = {
+    device_id: row.deviceId ?? null,
+    operator_id: row.operatorId ?? null,
+    zone: row.zone ?? null,
+    accel_x: row.accel?.x ?? 0,
+    accel_y: row.accel?.y ?? 0,
+    accel_z: row.accel?.z ?? 1,
+    gyro_x: row.gyro?.x ?? 0,
+    gyro_y: row.gyro?.y ?? 0,
+    gyro_z: row.gyro?.z ?? 0,
+    ts: row.ts ?? Date.now(),
+    created_at: new Date(),
+  };
+  await col.insertOne(doc);
 }
 
-function getRecentTelemetry(limit = 100) {
-  return getDb().prepare(
-    'SELECT * FROM telemetry ORDER BY ts DESC LIMIT ?'
-  ).all(limit);
+async function insertPostureEvent(row) {
+  const col = getDb().collection('posture_events');
+  const doc = {
+    device_id: row.deviceId ?? null,
+    operator_id: row.operatorId ?? null,
+    zone: row.zone ?? null,
+    posture_type: row.postureType,
+    severity: row.severity,
+    tilt_forward_deg: row.tiltForwardDeg ?? null,
+    tilt_lateral_deg: row.tiltLateralDeg ?? null,
+    ts: row.ts ?? Date.now(),
+    created_at: new Date(),
+  };
+  await col.insertOne(doc);
 }
 
-function getRecentPostureEvents(limit = 50) {
-  return getDb().prepare(
-    'SELECT * FROM posture_events ORDER BY ts DESC LIMIT ?'
-  ).all(limit);
+async function getRecentTelemetry(limit = 100) {
+  const col = getDb().collection('telemetry');
+  const cursor = col.find({}).sort({ ts: -1 }).limit(limit);
+  const docs = await cursor.toArray();
+  return docs.map(({ _id, ...rest }) => rest);
+}
+
+async function getRecentPostureEvents(limit = 50) {
+  const col = getDb().collection('posture_events');
+  const cursor = col.find({}).sort({ ts: -1 }).limit(limit);
+  const docs = await cursor.toArray();
+  return docs.map((doc) => {
+    const { _id, ...rest } = doc;
+    return { ...rest, id: _id.toString() };
+  });
 }
 
 module.exports = {
+  connect,
   getDb,
   insertTelemetry,
   insertPostureEvent,

@@ -5,6 +5,8 @@
 const mqtt = require('mqtt');
 
 function createHttpSender(apiUrl) {
+  let lastLog = 0;
+  const LOG_INTERVAL_MS = 5000;
   return async (sample) => {
     try {
       const res = await fetch(apiUrl, {
@@ -14,7 +16,17 @@ function createHttpSender(apiUrl) {
       });
       if (!res.ok) console.error('HTTP', res.status, await res.text());
     } catch (err) {
-      console.error('HTTP send error:', err.message);
+      const now = Date.now();
+      if (now - lastLog >= LOG_INTERVAL_MS) {
+        lastLog = now;
+        console.error(
+          'HTTP send error: backend unreachable at',
+          apiUrl,
+          '—',
+          err.cause?.code || err.message,
+          '(backend running? npm start in backend/)'
+        );
+      }
     }
   };
 }
