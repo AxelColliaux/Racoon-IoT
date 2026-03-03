@@ -15,6 +15,9 @@ async function handleTelemetry(payload) {
   const ts = body.ts ?? Date.now();
   const accel = body.accel || {};
   const gyro = body.gyro || {};
+  const activity = body.activity ?? null;
+  const embeddedPosture = body.embeddedPosture ?? null;
+  const angleDiff = body.angleDiff ?? null;
 
   const row = {
     deviceId,
@@ -23,6 +26,9 @@ async function handleTelemetry(payload) {
     accel: { x: accel.x ?? 0, y: accel.y ?? 0, z: accel.z ?? 1 },
     gyro: { x: gyro.x ?? 0, y: gyro.y ?? 0, z: gyro.z ?? 0 },
     ts,
+    activity,
+    embeddedPosture,
+    angleDiff,
   };
 
   // Persistance : chaque position (télémétrie) est enregistrée en base
@@ -34,6 +40,9 @@ async function handleTelemetry(payload) {
     deviceId,
     operatorId,
     zone,
+    activity,
+    embeddedPosture,
+    angleDiff,
     ...result,
   };
   broadcastPosture(message);

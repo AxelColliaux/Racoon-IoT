@@ -11,16 +11,21 @@ export function PostureIndicator({ posture, connected }) {
     );
   }
 
-  const severity = posture.severity || 'ok';
+  const severity = posture?.severity || 'ok';
   const labels = { ok: 'Posture OK', warning: 'Attention', alert: 'Alerte posture' };
-  const tiltF = posture.tiltForward != null ? posture.tiltForward.toFixed(1) : '—';
-  const tiltL = posture.tiltLateral != null ? posture.tiltLateral.toFixed(1) : '—';
+  const tiltF = posture?.tiltForward != null ? posture.tiltForward.toFixed(1) : '—';
+  const tiltL = posture?.tiltLateral != null ? posture.tiltLateral.toFixed(1) : '—';
+  const activity = posture?.activity || '—';
+  const angleDiff = posture?.angleDiff != null ? posture.angleDiff.toFixed(1) : '—';
 
   return (
     <div className={`posture-indicator posture-${severity}`}>
       <span className="label">{labels[severity] || severity}</span>
       <span className="angles">
         Incl. avant: {tiltF}° | Latérale: {tiltL}°
+      </span>
+      <span className="embedded">
+        Activité (gilet): <strong>{activity}</strong> | Δ angle haut/bas: {angleDiff}°
       </span>
       {connected && <span className="badge connected">Temps réel</span>}
     </div>

@@ -6,12 +6,7 @@
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 
-async function listPorts() {
-  const ports = await SerialPort.list();
-  return ports.map((p) => ({ path: p.path, manufacturer: p.manufacturer }));
-}
-
-function createSerialBridge(portPath, baudRate = 115200, onLine) {
+function createSerialBridge(portPath, onLine, baudRate = 115200) {
   const port = new SerialPort({ path: portPath, baudRate }, (err) => {
     if (err) {
       console.error('Serial open error:', err.message);
@@ -26,7 +21,7 @@ function createSerialBridge(portPath, baudRate = 115200, onLine) {
     if (!trimmed) return;
     try {
       const data = JSON.parse(trimmed);
-      if (data.accel && data.gyro) onLine(data);
+      onLine(data);
     } catch (_) {
       // ignore non-JSON lines
     }
@@ -34,6 +29,11 @@ function createSerialBridge(portPath, baudRate = 115200, onLine) {
 
   port.on('error', (err) => console.error('Serial error:', err.message));
   return { port, parser };
+}
+
+async function listPorts() {
+  const ports = await SerialPort.list();
+  return ports.map((p) => ({ path: p.path, manufacturer: p.manufacturer }));
 }
 
 module.exports = { createSerialBridge, listPorts };

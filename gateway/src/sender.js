@@ -33,10 +33,15 @@ function createHttpSender(apiUrl) {
 
 function createMqttSender(brokerUrl, topic = 'smartposture/telemetry') {
   const client = mqtt.connect(brokerUrl);
+  const debug = process.env.MQTT_DEBUG === '1';
   client.on('error', (err) => console.error('MQTT error:', err.message));
-  client.on('connect', () => console.log('MQTT connected'));
+  client.on('connect', () => console.log('[MQTT] Gateway connected to broker, publishing to topic:', topic));
   return (sample) => {
-    if (client.connected) client.publish(topic, JSON.stringify(sample));
+    if (client.connected) {
+      const payload = JSON.stringify(sample);
+      client.publish(topic, payload);
+      if (debug) console.log('[MQTT] Published to', topic);
+    }
   };
 }
 

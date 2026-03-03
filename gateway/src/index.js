@@ -25,15 +25,53 @@ function getSender() {
 
 const send = getSender();
 
+function normalizeSample(data) {
+  const deviceId = process.env.DEVICE_ID || data.id || 'gateway-1';
+  const operatorId = process.env.OPERATOR_ID;
+  const zone = process.env.ZONE;
+
+  if (data.accel && data.gyro) {
+    return {
+      accel: data.accel,
+      gyro: data.gyro,
+      ts: data.ts ?? Date.now(),
+      deviceId,
+      operatorId,
+      zone,
+    };
+  }
+  
+  if (data.sensorLow && typeof data.sensorLow === 'object') {
+    const low = data.sensorLow;
+    return {
+      accel: {
+        x: low.accX ?? 0,
+        y: low.accY ?? 0,
+        z: low.accZ ?? 9.81,
+      },
+      gyro: {
+        x: low.gyrX ?? 0,
+        y: low.gyrY ?? 0,
+        z: low.gyrZ ?? 0,
+      },
+      ts: data.timestamp ?? Date.now(),
+      deviceId,
+      operatorId,
+      zone,
+      // Informations haut niveau provenant du firmware embarqué
+      activity: data.activity,
+      embeddedPosture: data.posture,
+      angleDiff: data.angle_diff,
+    };
+  }
+
+  // Format inconnu : on renvoie null pour ignorer l’échantillon
+  return null;
+}
+
 function onSample(data) {
-  const payload = {
-    accel: data.accel,
-    gyro: data.gyro,
-    ts: data.ts ?? Date.now(),
-    deviceId: process.env.DEVICE_ID || 'gateway-1',
-    operatorId: process.env.OPERATOR_ID,
-    zone: process.env.ZONE,
-  };
+  const payload = normalizeSample(data);
+  if (!payload) return;
   send(payload);
 }
 
@@ -44,12 +82,13 @@ async function main() {
       console.error('SERIAL_PORT required. Available ports:', ports);
       process.exit(1);
     }
-    createSerialBridge(serialPort, 115200, onSample);
+    createSerialBridge(serialPort, onSample, 115200);
     return;
   }
 
   if (mode === 'tcp') {
-    console.log('Gateway running in TCP mode. Connecting to', `${tcpHost}:${tcpPort}`);
+    console.log('Gateway: TCP mode — reading stream from Wokwi at', `${tcpHost}:${tcpPort}`);
+    console.log('Gateway: Sending to backend via', mqttBroker ? 'MQTT (broker)' : 'HTTP POST');
     createTcpBridge(tcpHost, tcpPort, onSample);
     return;
   }

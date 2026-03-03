@@ -45,6 +45,9 @@ async function insertTelemetry(row) {
     gyro_y: row.gyro?.y ?? 0,
     gyro_z: row.gyro?.z ?? 0,
     ts: row.ts ?? Date.now(),
+    activity: row.activity ?? null,
+    embedded_posture: row.embeddedPosture ?? null,
+    angle_diff: row.angleDiff ?? null,
     created_at: new Date(),
   };
   await col.insertOne(doc);
