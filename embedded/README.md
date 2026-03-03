@@ -60,8 +60,21 @@ Sans étape 1, Wokwi n’exécute aucun code : le port TCP est ouvert mais aucun
 2. Copier une ou plusieurs lignes JSON.
 3. Les coller dans le pont Node.js (mode manuel) qui les enverra au backend (MQTT ou API). Voir `../gateway/README.md`.
 
+## Moteur de vibration (retour haptique)
+
+Le sketch pilote un **moteur de vibration** sur la broche **9** (PWM) :
+
+| Posture       | PWM  | Effet                    |
+|---------------|------|---------------------------|
+| Bonne posture | 0    | Arrêt                     |
+| WARNING       | 80   | Vibration légère          |
+| BAD_POSTURE   | 255  | Vibration forte           |
+
+- **En simulation (Wokwi)** : une LED orange sur la broche 9 simule le moteur (éteinte / faible / forte luminosité) et un **buzzer piézo** sur la broche 8 simule le retour sonore (WARNING = 700 Hz, BAD_POSTURE = 1500 Hz, bonne posture = silence).
+- **En vrai hardware** : connecter un moteur de vibration (3–5 V) via un transistor NPN sur la broche 9. Le buzzer sur la broche 8 est optionnel (retour sonore en plus de la vibration).
+
 ## Fichiers
 
-- `src/smartposture.ino` : sketch principal (simulation ou 1/2 MPU-6050 si `USE_MPU6050` défini). Avec 2 capteurs, lecture I2C 0x68 et 0x69 puis moyenne.
-- `diagram.json` : schéma Wokwi (Arduino Uno + 2× MPU-6050 avec AD0 du second à 5V).
+- `src/smartposture.ino` : sketch principal (simulation ou 1/2 MPU-6050). Contrôle vibration selon posture.
+- `diagram.json` : schéma Wokwi (Arduino Uno + 2× MPU-6050 + LED vibration sur broche 9).
 - `wokwi.toml` : configuration projet Wokwi (firmware compilé .hex).

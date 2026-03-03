@@ -41,24 +41,35 @@ function normalizeSample(data) {
     };
   }
   
-  if (data.sensorLow && typeof data.sensorLow === 'object') {
-    const low = data.sensorLow;
+  // Format embarqué avec sensorHigh (haut du dos) et sensorLow (bas du dos)
+  const high = data.sensorHigh && typeof data.sensorHigh === 'object' ? data.sensorHigh : null;
+  const low = data.sensorLow && typeof data.sensorLow === 'object' ? data.sensorLow : null;
+
+  if (high || low) {
+    const h = high || { accX: 0, accY: 0, accZ: 9.81, gyrX: 0, gyrY: 0, gyrZ: 0 };
+    const l = low || { accX: 0, accY: 0, accZ: 9.81, gyrX: 0, gyrY: 0, gyrZ: 0 };
+    const ax = (h.accX ?? 0) + (l.accX ?? 0);
+    const ay = (h.accY ?? 0) + (l.accY ?? 0);
+    const az = (h.accZ ?? 0) + (l.accZ ?? 0);
+    const gx = (h.gyrX ?? 0) + (l.gyrX ?? 0);
+    const gy = (h.gyrY ?? 0) + (l.gyrY ?? 0);
+    const gz = (h.gyrZ ?? 0) + (l.gyrZ ?? 0);
+    const n = (high && low) ? 2 : 1;
     return {
       accel: {
-        x: low.accX ?? 0,
-        y: low.accY ?? 0,
-        z: low.accZ ?? 9.81,
+        x: ax / n,
+        y: ay / n,
+        z: (az / n) || 9.81,
       },
       gyro: {
-        x: low.gyrX ?? 0,
-        y: low.gyrY ?? 0,
-        z: low.gyrZ ?? 0,
+        x: gx / n,
+        y: gy / n,
+        z: gz / n,
       },
       ts: data.timestamp ?? Date.now(),
       deviceId,
       operatorId,
       zone,
-      // Informations haut niveau provenant du firmware embarqué
       activity: data.activity,
       embeddedPosture: data.posture,
       angleDiff: data.angle_diff,
