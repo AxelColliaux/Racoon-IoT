@@ -2,20 +2,98 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <math.h>
+#include <esp_sleep.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
 
 Adafruit_MPU6050 mpu1; // capteur haut du dos
 Adafruit_MPU6050 mpu2; // capteur bas du dos
 
+// Sonde de temperature analogique (LM35)
+const int TEMP_SENSOR_PIN = 34;
+
+// Deep Sleep
+const uint64_t DEEP_SLEEP_INTERVAL_US = 10ULL * 1000000ULL;
+
+// Réseau (optionnel) : si SSID/MQTT vides, la publication MQTT est ignorée
+const char* WIFI_SSID = "";
+const char* WIFI_PASSWORD = "";
+const char* MQTT_HOST = "";
+const uint16_t MQTT_PORT = 1883;
+
+const char* MQTT_TOPIC_POSTURE = "racoon/gilet_01/sensors/posture";
+const char* MQTT_TOPIC_TEMPERATURE = "racoon/gilet_01/sensors/temperature";
+const char* MQTT_TOPIC_STATUS = "racoon/gilet_01/alerts/status";
+
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+
 // Moteur de vibration (PWM) : léger en WARNING, fort en BAD_POSTURE
-#define VIBRATION_PIN 9
+#define VIBRATION_PIN 25
 #define VIBRATION_OFF     0   // bonne posture
 #define VIBRATION_WARNING 80  // vibration légère
 #define VIBRATION_BAD     255 // vibration forte
 
 // Buzzer (simulation sonore en Wokwi) : discret en WARNING, fort en BAD_POSTURE
-#define BUZZER_PIN 8
+#define BUZZER_PIN 26
 #define TONE_WARNING 700   // Hz — son discret
 #define TONE_BAD     1500  // Hz — son plus fort / urgent
+
+bool hasWiFiConfig() {
+  return strlen(WIFI_SSID) > 0;
+}
+
+bool hasMqttConfig() {
+  return strlen(MQTT_HOST) > 0;
+}
+
+void connectWiFiIfNeeded() {
+  if (!hasWiFiConfig() || WiFi.status() == WL_CONNECTED) {
+    return;
+  }
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  unsigned long startedAt = millis();
+  while (WiFi.status() != WL_CONNECTED && (millis() - startedAt) < 5000) {
+    delay(100);
+  }
+}
+
+bool connectMqttIfNeeded() {
+  if (!hasMqttConfig() || WiFi.status() != WL_CONNECTED) {
+    return false;
+  }
+
+  if (mqttClient.connected()) {
+    return true;
+  }
+
+  mqttClient.setServer(MQTT_HOST, MQTT_PORT);
+  String clientId = "smartposture-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+  return mqttClient.connect(clientId.c_str());
+}
+
+void publishMqttData(const String& posture, float temperatureC) {
+  connectWiFiIfNeeded();
+  if (!connectMqttIfNeeded()) {
+    return;
+  }
+
+  mqttClient.publish(MQTT_TOPIC_POSTURE, posture.c_str(), false);
+
+  String temperaturePayload = String(temperatureC, 2);
+  mqttClient.publish(MQTT_TOPIC_TEMPERATURE, temperaturePayload.c_str(), false);
+
+  mqttClient.publish(MQTT_TOPIC_STATUS, "up", true);
+  mqttClient.loop();
+}
+
+float readTemperatureC() {
+  int raw = analogRead(TEMP_SENSOR_PIN);
+  float voltage = (raw * 3.3f) / 4095.0f;
+  return voltage * 100.0f;
+}
 
 void setup(void) {
   Serial.begin(115200);
@@ -23,6 +101,9 @@ void setup(void) {
   analogWrite(VIBRATION_PIN, VIBRATION_OFF);
   pinMode(BUZZER_PIN, OUTPUT);
   noTone(BUZZER_PIN);
+  pinMode(TEMP_SENSOR_PIN, INPUT);
+
+  WiFi.mode(WIFI_STA);
 
   if (!mpu1.begin(0x68)) { while (1) yield(); }
   if (!mpu2.begin(0x69)) { while (1) yield(); }
@@ -45,6 +126,7 @@ void loop() {
   sensors_event_t a2, g2, t2;
 
   unsigned long timestamp = millis();
+  float temperatureC = readTemperatureC();
   mpu1.getEvent(&a1, &g1, &t1);
   mpu2.getEvent(&a2, &g2, &t2);
 
@@ -104,12 +186,21 @@ void loop() {
   Serial.print("\"id\":\"gilet_01\"");
   Serial.print(",\"timestamp\":"); Serial.print(timestamp);
   Serial.print(",\"activity\":\""); Serial.print(activity); Serial.print("\"");
+  Serial.print(",\"status\":\"up\"");
   Serial.print(",\"posture\":\""); Serial.print(posture); Serial.print("\"");
   Serial.print(",\"angle_diff\":"); Serial.print(deltaAngle, 2);
+  Serial.print(",\"temperature_c\":"); Serial.print(temperatureC, 2);
   
   Serial.print(",\"sensorHigh\":{"); printData(a1, g1); Serial.print("}");
   Serial.print(",\"sensorLow\":{"); printData(a2, g2); Serial.print("}");
   Serial.println("}");
 
-  delay(200);
+  publishMqttData(posture, temperatureC);
+
+  analogWrite(VIBRATION_PIN, VIBRATION_OFF);
+  noTone(BUZZER_PIN);
+  Serial.flush();
+
+  esp_sleep_enable_timer_wakeup(DEEP_SLEEP_INTERVAL_US);
+  esp_deep_sleep_start();
 }
