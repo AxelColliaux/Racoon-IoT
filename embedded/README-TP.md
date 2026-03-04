@@ -1,17 +1,21 @@
 # README TP
 
-Le gilet fonctionne avec une **ESP32**.
+Le gilet fonctionne avec une **Arduino Uno**.
 
 Il fait maintenant 4 choses :
 
 - lit la posture (2 capteurs MPU6050)
 - lit la température (LM35)
 - envoie un statut `up` (pour dire que la carte est allumée)
-- se met en **deep sleep** et se réveille toutes les **10 secondes**
+- applique un **pseudo deep sleep ~10s** (mode basse conso AVR + fallback)
 
 ## Données envoyées
 
-Les données partent sur 3 topics MQTT :
+La chaîne complète est :
+
+`Arduino (JSON série) -> Gateway -> MQTT -> Backend`
+
+Les 3 topics MQTT publiés sont :
 
 - `racoon/gilet_01/sensors/posture`
 - `racoon/gilet_01/sensors/temperature`
@@ -19,10 +23,9 @@ Les données partent sur 3 topics MQTT :
 
 ## Important
 
-Si `WIFI_SSID`, `WIFI_PASSWORD` ou `MQTT_HOST` ne sont pas remplis dans `src/smartposture.ino` :
+Sur Arduino Uno, le MQTT n'est pas envoyé directement par la carte : c'est la **Gateway** qui publie les topics.
 
-- il n’y a pas d’envoi MQTT
-- mais le code continue à tourner et affiche les données dans le moniteur série
+Dans le terminal série, le pseudo deep sleep se voit par une nouvelle ligne JSON environ toutes **10 secondes**.
 
 ## Exemple de message série
 

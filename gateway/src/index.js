@@ -71,6 +71,8 @@ function normalizeSample(data) {
       operatorId,
       zone,
       activity: data.activity,
+      status: data.status,
+      temperatureC: data.temperature_c,
       embeddedPosture: data.posture,
       angleDiff: data.angle_diff,
     };

@@ -40,6 +40,22 @@ function createMqttSender(brokerUrl, topic = 'smartposture/telemetry') {
     if (client.connected) {
       const payload = JSON.stringify(sample);
       client.publish(topic, payload);
+
+      const deviceId = sample.deviceId || 'unknown';
+      const postureTopic = `racoon/${deviceId}/sensors/posture`;
+      const temperatureTopic = `racoon/${deviceId}/sensors/temperature`;
+      const statusTopic = `racoon/${deviceId}/alerts/status`;
+
+      if (sample.embeddedPosture != null) {
+        client.publish(postureTopic, String(sample.embeddedPosture));
+      }
+
+      if (sample.temperatureC != null && Number.isFinite(Number(sample.temperatureC))) {
+        client.publish(temperatureTopic, String(sample.temperatureC));
+      }
+
+      client.publish(statusTopic, String(sample.status || 'up'), { retain: true });
+
       if (debug) console.log('[MQTT] Published to', topic);
     }
   };

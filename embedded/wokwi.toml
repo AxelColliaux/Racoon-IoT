@@ -4,6 +4,6 @@
 
 [wokwi]
 version = 1
-firmware = ".pio/build/esp32dev/firmware.bin"
-elf = ".pio/build/esp32dev/firmware.elf"
+firmware = ".pio/build/uno/firmware.hex"
+elf = ".pio/build/uno/firmware.elf"
 rfc2217ServerPort = 4000
