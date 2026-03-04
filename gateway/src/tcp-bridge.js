@@ -28,7 +28,7 @@ function createTcpBridge(host, port, onLine) {
         if (!trimmed) continue;
         try {
           const parsed = JSON.parse(trimmed);
-          onLine(parsed);
+          onLine(parsed, { host, port });
         } catch (_) {}
       }
     });

@@ -16,7 +16,27 @@ const mqttBroker = process.env.MQTT_BROKER;
 const serialPort = process.env.SERIAL_PORT;
 const tcpHost = process.env.WOKWI_TCP_HOST || 'localhost';
 const tcpPort = Number.parseInt(process.env.WOKWI_TCP_PORT || '4000', 10);
+const tcpPorts = (process.env.WOKWI_TCP_PORTS || '')
+  .split(',')
+  .map((p) => Number.parseInt(p.trim(), 10))
+  .filter((p) => Number.isFinite(p));
 const intervalMs = Number.parseInt(process.env.INTERVAL_MS || '200', 10);
+
+function parseDeviceMap(raw) {
+  if (!raw) return {};
+  return raw
+    .split(',')
+    .map((pair) => pair.trim())
+    .filter(Boolean)
+    .reduce((acc, pair) => {
+      const [port, id] = pair.split(':').map((v) => v?.trim());
+      const parsedPort = Number.parseInt(port, 10);
+      if (Number.isFinite(parsedPort) && id) acc[parsedPort] = id;
+      return acc;
+    }, {});
+}
+
+const perPortDeviceId = parseDeviceMap(process.env.WOKWI_DEVICE_IDS || '');
 
 function getSender() {
   if (mqttBroker) return createMqttSender(mqttBroker);
@@ -25,8 +45,25 @@ function getSender() {
 
 const send = getSender();
 
-function normalizeSample(data) {
-  const deviceId = process.env.DEVICE_ID || data.id || 'gateway-1';
+function resolveDeviceId(data, source) {
+  const sourcePort = source?.port;
+  if (Number.isFinite(sourcePort) && perPortDeviceId[sourcePort]) {
+    return perPortDeviceId[sourcePort];
+  }
+  if (process.env.DEVICE_ID) return process.env.DEVICE_ID;
+
+  const configuredPorts = tcpPorts.length > 0 ? tcpPorts : [tcpPort];
+  const multiTcpSources = mode === 'tcp' && configuredPorts.length > 1;
+
+  if (multiTcpSources && Number.isFinite(sourcePort)) {
+    return data.id ? `${data.id}-${sourcePort}` : `gateway-${sourcePort}`;
+  }
+
+  return data.id || (Number.isFinite(sourcePort) ? `gateway-${sourcePort}` : 'gateway-1');
+}
+
+function normalizeSample(data, source) {
+  const deviceId = resolveDeviceId(data, source);
   const operatorId = process.env.OPERATOR_ID;
   const zone = process.env.ZONE;
 
@@ -80,8 +117,8 @@ function normalizeSample(data) {
   return null;
 }
 
-function onSample(data) {
-  const payload = normalizeSample(data);
+function onSample(data, source) {
+  const payload = normalizeSample(data, source);
   if (!payload) return;
   send(payload);
 }
@@ -98,9 +135,11 @@ async function main() {
   }
 
   if (mode === 'tcp') {
-    console.log('Gateway: TCP mode — reading stream from Wokwi at', `${tcpHost}:${tcpPort}`);
+    const portsToUse = tcpPorts.length > 0 ? tcpPorts : [tcpPort];
+    const displayPorts = portsToUse.join(', ');
+    console.log('Gateway: TCP mode — reading stream from Wokwi at', `${tcpHost}:${displayPorts}`);
     console.log('Gateway: Sending to backend via', mqttBroker ? 'MQTT (broker)' : 'HTTP POST');
-    createTcpBridge(tcpHost, tcpPort, onSample);
+    portsToUse.forEach((port) => createTcpBridge(tcpHost, port, onSample));
     return;
   }
 

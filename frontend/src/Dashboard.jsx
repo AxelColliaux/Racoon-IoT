@@ -38,11 +38,16 @@ export default function Dashboard() {
   const [vests, setVests] = useState([]);
   const [vestStates, setVestStates] = useState({}); // { deviceId: lastPosture }
   const [perVestHistory, setPerVestHistory] = useState({}); // { deviceId: [points] }
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   // filter: which vests to show in monitoring table / alerts / chart
   const [filterVests, setFilterVests] = useState([ALL]);
   // sim: which single vest to show in 3D
   const [simVest, setSimVest] = useState(ALL);
+
+  const loadVests = useCallback(() => {
+    fetchVests().then(setVests).catch(() => {});
+  }, []);
 
   /* load persisted data + vests (history from DB so chart shows evolution after reload) */
   useEffect(() => {
@@ -53,17 +58,21 @@ export default function Dashboard() {
       })
       .catch(() => {});
     loadVests();
-  }, []);
+  }, [loadVests]);
 
-  const loadVests = useCallback(() => {
-    fetchVests().then(setVests).catch(() => {});
+  useEffect(() => {
+    const timer = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   /* track per-vest live state + per-vest history */
   useEffect(() => {
     if (lastPosture && lastPosture.deviceId) {
       const did = lastPosture.deviceId;
-      setVestStates((prev) => ({ ...prev, [did]: lastPosture }));
+      setVestStates((prev) => ({
+        ...prev,
+        [did]: { ...lastPosture, _lastSeenAt: Date.now() },
+      }));
       setPerVestHistory((prev) => ({
         ...prev,
         [did]: [...(prev[did] || []), lastPosture].slice(-200),
@@ -85,19 +94,21 @@ export default function Dashboard() {
 
   /* count active vests */
   const activeVestCount = useMemo(() => {
-    const threshold = Date.now() - 30_000;
+    const threshold = nowTs - 30_000;
     return Object.values(vestStates).filter(
-      (p) => p && p.ts && p.ts > threshold,
+      (p) => p && (p._lastSeenAt ?? p.ts) && (p._lastSeenAt ?? p.ts) > threshold,
     ).length;
-  }, [vestStates, lastPosture]);
+  }, [vestStates, nowTs]);
 
   /* ── filtering helpers ──────────────────────────────────────── */
   const isAll = filterVests.includes(ALL);
 
   // vests shown in monitoring
-  const displayedVests = isAll
-    ? vests
-    : vests.filter((v) => filterVests.includes(v.vest_id));
+  const vestsById = useMemo(() => {
+    const byId = new Map();
+    vests.forEach((v) => byId.set(v.vest_id, v));
+    return byId;
+  }, [vests]);
 
   // alerts filtered
   const filteredAlerts = isAll
@@ -133,6 +144,13 @@ export default function Dashboard() {
   const displayedOptions = isAll
     ? filterOptions
     : filterOptions.filter((o) => filterVests.includes(o.id));
+
+  const displayedVestIds = useMemo(() => {
+    const ids = isAll
+      ? filterOptions.map((o) => o.id)
+      : filterOptions.filter((o) => filterVests.includes(o.id)).map((o) => o.id);
+    return Array.from(new Set(ids));
+  }, [isAll, filterOptions, filterVests]);
 
   // Auto-sync simVest when filter changes
   const effectiveSimVest = useMemo(() => {
@@ -233,17 +251,18 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {displayedVests.length > 0 ? (
-                displayedVests.map((v) => {
-                  const state = vestStates[v.vest_id];
+              {displayedVestIds.length > 0 ? (
+                displayedVestIds.map((vestId) => {
+                  const state = vestStates[vestId];
+                  const vest = vestsById.get(vestId);
                   console.log(state);
                   const sev = severityOf(state);
                   return (
-                    <tr key={v.vest_id} className={`row-severity-${sev}`}>
+                    <tr key={vestId} className={`row-severity-${sev}`}>
                       <td className="cell-id">
-                        {v.vest_id}
-                        {v.operator && (
-                          <span className="cell-operator"> — {v.operator}</span>
+                        {vestId}
+                        {vest?.operator && (
+                          <span className="cell-operator"> — {vest.operator}</span>
                         )}
                       </td>
                       <td>

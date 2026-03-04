@@ -26,12 +26,14 @@ export function usePostureWebSocket() {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'posture_alert') {
-            setAlerts((prev) => [{ ...data, id: Date.now() + Math.random() }, ...prev].slice(0, 50));
+            setAlerts((prev) => [{ ...data, id: Date.now() + Math.random() }, ...prev]);
           }
           if (data.type === 'posture' || data.type === 'posture_alert') {
             setLastPosture(data);
           }
-        } catch (_) {}
+        } catch {
+          return;
+        }
       };
     }
 

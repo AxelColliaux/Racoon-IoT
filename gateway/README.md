@@ -25,6 +25,8 @@ Variables d'environnement (ou fichier `.env`) :
 | `SERIAL_PORT`     | Port série (mode serial)             | —                         |
 | `WOKWI_TCP_HOST`  | Hôte TCP (mode tcp, Wokwi for VS Code) | `localhost`             |
 | `WOKWI_TCP_PORT`  | Port TCP (ex. 4000 si `rfc2217ServerPort` dans wokwi.toml) | `4000` |
+| `WOKWI_TCP_PORTS` | Liste de ports TCP Wokwi (multi-instance), ex. `4000,4001` | — |
+| `WOKWI_DEVICE_IDS`| Mapping optionnel port→deviceId, ex. `4000:gilet_01,4001:gilet_02` | — |
 | `INTERVAL_MS`     | Intervalle envoi (mock) en ms        | `200`                     |
 | `DEVICE_ID`       | Identifiant appareil                 | `gateway-1`               |
 | `OPERATOR_ID`     | Identifiant opérateur (optionnel)    | —                         |
@@ -45,7 +47,15 @@ SERIAL_PORT=/dev/tty.usbserial-XXXX npm run serial
 npm run tcp
 # ou avec host/port personnalisés :
 WOKWI_TCP_PORT=4000 npm run tcp
+
+# Multi-instance Wokwi (plusieurs gilets simulés)
+WOKWI_TCP_PORTS=4000,4001 npm run tcp
+# Mapping explicite des deviceId (recommandé)
+WOKWI_TCP_PORTS=4000,4001 WOKWI_DEVICE_IDS=4000:gilet_01,4001:gilet_02 npm run tcp
 ```
+
+En mode multi-instance (`WOKWI_TCP_PORTS`), la gateway ouvre une connexion TCP par port.
+Si `WOKWI_DEVICE_IDS` n'est pas fourni, un suffixe `-<port>` est ajouté automatiquement au `id` entrant pour éviter les collisions.
 
 Sans `MQTT_BROKER`, les données sont envoyées en HTTP POST vers `API_URL`.
 

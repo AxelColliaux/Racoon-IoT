@@ -21,10 +21,20 @@ const THRESHOLDS = {
   lateralAlert: 30,
 };
 const SUSTAINED_MS = 1500;
-const state = { lastAlert: null, sustainedSince: null };
+const stateByDevice = new Map();
+
+function getDeviceState(deviceId) {
+  const key = deviceId || 'unknown';
+  const existing = stateByDevice.get(key);
+  if (existing) return existing;
+  const created = { lastAlert: null, sustainedSince: null };
+  stateByDevice.set(key, created);
+  return created;
+}
 
 function detect(sample) {
   const accel = sample.accel || {};
+  const deviceState = getDeviceState(sample.deviceId);
   const { tiltForward, tiltLateral } = accelToTiltDeg(
     accel.x, accel.y, accel.z
   );
@@ -55,16 +65,16 @@ function detect(sample) {
 
   if (severity !== 'ok') {
     const key = `${severity}-${postureType}`;
-    if (state.lastAlert !== key) {
-      state.lastAlert = key;
-      state.sustainedSince = ts;
+    if (deviceState.lastAlert !== key) {
+      deviceState.lastAlert = key;
+      deviceState.sustainedSince = ts;
     }
-    const sustained = (ts - state.sustainedSince) >= SUSTAINED_MS;
+    const sustained = (ts - deviceState.sustainedSince) >= SUSTAINED_MS;
     result.sustained = sustained;
     result.shouldEmitAlert = sustained;
   } else {
-    state.lastAlert = null;
-    state.sustainedSince = null;
+    deviceState.lastAlert = null;
+    deviceState.sustainedSince = null;
   }
 
   return result;
