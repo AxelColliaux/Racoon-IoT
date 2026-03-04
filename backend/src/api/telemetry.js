@@ -1,4 +1,11 @@
-const { insertTelemetry, insertPostureEvent, getRecentTelemetry, getRecentPostureEvents } = require('../db');
+const {
+  insertTelemetry,
+  insertPostureEvent,
+  getRecentTelemetry,
+  getRecentPostureEvents,
+  insertTimeSeriesPoint,
+  getRecentFiveMinuteAggregation,
+} = require('../db');
 const { detect } = require('../posture/detector');
 
 let broadcastPosture = () => {};
@@ -63,6 +70,55 @@ async function handleTelemetry(payload) {
   }
 }
 
+function parseMqttTopic(topic) {
+  const parts = String(topic || '').split('/');
+  if (parts.length < 4) return null;
+  const [namespace, deviceId, category, metric] = parts;
+  if (namespace !== 'racoon') return null;
+  return { deviceId, category, metric };
+}
+
+async function handleMqttMetric(topic, payload) {
+  const parsed = parseMqttTopic(topic);
+  if (!parsed) return false;
+
+  const raw = typeof payload === 'string' ? payload.trim() : String(payload).trim();
+  const numeric = Number.parseFloat(raw);
+  const hasNumeric = Number.isFinite(numeric);
+
+  let kind = null;
+  let value = raw;
+
+  if (parsed.category === 'sensors' && parsed.metric === 'temperature') {
+    kind = 'temperature';
+    value = hasNumeric ? numeric : raw;
+  } else if (parsed.category === 'sensors' && parsed.metric === 'posture') {
+    kind = 'posture';
+  } else if (parsed.metric === 'status') {
+    kind = 'status';
+  }
+
+  if (!kind) return false;
+
+  await insertTimeSeriesPoint({
+    deviceId: parsed.deviceId,
+    kind,
+    value,
+    source: 'mqtt',
+    ts: new Date(),
+  });
+
+  broadcastPosture({
+    type: 'mqtt_metric',
+    deviceId: parsed.deviceId,
+    kind,
+    value,
+    topic,
+  });
+
+  return true;
+}
+
 function registerRoutes(app) {
   app.post('/api/telemetry', async (req, res) => {
     try {
@@ -97,9 +153,20 @@ function registerRoutes(app) {
     }
   });
 
+  app.get('/api/telemetry-agg', async (req, res) => {
+    try {
+      const limit = Math.min(Number.parseInt(req.query.limit, 10) || 100, 500);
+      const data = await getRecentFiveMinuteAggregation(limit);
+      res.json(data);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', service: 'smartposture-backend' });
   });
 }
 
-module.exports = { registerRoutes, handleTelemetry, setBroadcast };
+module.exports = { registerRoutes, handleTelemetry, handleMqttMetric, setBroadcast };

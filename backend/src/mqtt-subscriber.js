@@ -1,7 +1,8 @@
 const mqtt = require('mqtt');
-const { handleTelemetry } = require('./api/telemetry');
+const { handleTelemetry, handleMqttMetric } = require('./api/telemetry');
 
 const topic = process.env.MQTT_TOPIC || 'smartposture/telemetry';
+const hierarchicalTopic = process.env.MQTT_TOPIC_HIERARCHY || 'racoon/+/+/+';
 const debug = process.env.MQTT_DEBUG === '1';
 
 function startMqttSubscriber(brokerUrl) {
@@ -11,16 +12,24 @@ function startMqttSubscriber(brokerUrl) {
   }
   const client = mqtt.connect(brokerUrl);
   client.on('connect', () => {
-    client.subscribe(topic, (err) => {
+    client.subscribe([topic, hierarchicalTopic], (err) => {
       if (err) console.error('[MQTT] Subscribe error', err);
-      else console.log('[MQTT] Backend subscribed to', topic, '— receiving telemetry from broker only (no TCP to gateway)');
+      else {
+        console.log('[MQTT] Backend subscribed to', topic);
+        console.log('[MQTT] Backend subscribed to', hierarchicalTopic);
+      }
     });
   });
-  client.on('message', (t, payload) => {
+  client.on('message', async (t, payload) => {
     if (debug) console.log('[MQTT] Message received on', t);
-    handleTelemetry(payload.toString()).catch((e) => {
+    try {
+      const handledAsMetric = await handleMqttMetric(t, payload.toString());
+      if (!handledAsMetric) {
+        await handleTelemetry(payload.toString());
+      }
+    } catch (e) {
       console.error('MQTT message error', e);
-    });
+    }
   });
   client.on('error', (err) => console.error('[MQTT] Error', err));
   return client;

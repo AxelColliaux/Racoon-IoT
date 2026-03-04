@@ -14,7 +14,7 @@ async function run() {
   await usersCol.createIndex({ username: 1 }, { unique: true });
   const vestsCol = db.collection('vests');
   await vestsCol.createIndex({ vest_id: 1 }, { unique: true });
-  console.log('MongoDB indexes created (telemetry, posture_events, users, vests)');
+  console.log('MongoDB indexes created (telemetry, posture_events, users, vests, telemetry_ts, telemetry_agg_5m)');
   process.exit(0);
 }
 

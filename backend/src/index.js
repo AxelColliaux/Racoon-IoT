@@ -3,7 +3,7 @@ const http = require('node:http');
 const express = require('express');
 const cors = require('cors');
 const { WebSocketServer } = require('ws');
-const { connect } = require('./db');
+const { connect, upsertFiveMinuteAggregation } = require('./db');
 const { registerRoutes, setBroadcast } = require('./api/telemetry');
 const { registerVestRoutes } = require('./api/vests');
 const { registerAuthRoutes } = require('./auth/routes');
@@ -25,6 +25,7 @@ registerAuthRoutes(app);
 // POST /api/telemetry is left open for gateway ingestion (server-to-server)
 app.get('/api/telemetry', authenticateToken);
 app.get('/api/posture-events', authenticateToken);
+app.get('/api/telemetry-agg', authenticateToken);
 app.use('/api/vests', authenticateToken);
 
 registerRoutes(app);
@@ -51,8 +52,25 @@ setBroadcast(broadcast);
 
 startMqttSubscriber(process.env.MQTT_BROKER);
 
+let aggInterval = null;
+
+function startAggregationJob() {
+  const everyMs = Number.parseInt(process.env.AGGREGATION_INTERVAL_MS || '60000', 10);
+  aggInterval = setInterval(async () => {
+    try {
+      const result = await upsertFiveMinuteAggregation();
+      if (process.env.AGG_DEBUG === '1') {
+        console.log('[AGG] 5m upserts:', result.upserts);
+      }
+    } catch (err) {
+      console.error('[AGG] failed:', err.message);
+    }
+  }, everyMs);
+}
+
 async function start() {
   await connect();
+  startAggregationJob();
   server.listen(PORT, () => {
     console.log('SmartPosture backend listening on', PORT, '| WebSocket /ws');
   });
