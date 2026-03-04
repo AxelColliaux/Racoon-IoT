@@ -1,7 +1,11 @@
 const mqtt = require('mqtt');
-const { handleTelemetry } = require('./api/telemetry');
+const { handlePostureMessage } = require('./api/telemetry');
+const { handleTemperatureMessage, handleStatusMessage } = require('./api/sensor-timeseries');
 
-const topic = process.env.MQTT_TOPIC || 'smartposture/telemetry';
+const TOPIC_POSTURE = 'sensors/alerts/posture';
+const TOPIC_TEMPERATURE = 'sensors/alerts/temperature';
+const TOPIC_STATUS = 'sensors/config/status';
+const TOPICS = [TOPIC_POSTURE, TOPIC_TEMPERATURE, TOPIC_STATUS];
 const debug = process.env.MQTT_DEBUG === '1';
 
 function startMqttSubscriber(brokerUrl) {
@@ -11,19 +15,28 @@ function startMqttSubscriber(brokerUrl) {
   }
   const client = mqtt.connect(brokerUrl);
   client.on('connect', () => {
-    client.subscribe(topic, (err) => {
+    client.subscribe(TOPICS, (err) => {
       if (err) console.error('[MQTT] Subscribe error', err);
-      else console.log('[MQTT] Backend subscribed to', topic, '— receiving telemetry from broker only (no TCP to gateway)');
+      else console.log('[MQTT] Backend subscribed to', TOPICS.join(', '));
     });
   });
-  client.on('message', (t, payload) => {
-    if (debug) console.log('[MQTT] Message received on', t);
-    handleTelemetry(payload.toString()).catch((e) => {
-      console.error('MQTT message error', e);
-    });
+  client.on('message', (topic, payload) => {
+    if (debug) console.log('[MQTT] Message received on', topic);
+    const payloadStr = payload.toString();
+    let p;
+    if (topic === TOPIC_POSTURE) {
+      p = handlePostureMessage(payloadStr);
+    } else if (topic === TOPIC_TEMPERATURE) {
+      p = handleTemperatureMessage(payloadStr);
+    } else if (topic === TOPIC_STATUS) {
+      p = handleStatusMessage(payloadStr);
+    } else {
+      return;
+    }
+    p.catch((e) => console.error('MQTT message error', e));
   });
   client.on('error', (err) => console.error('[MQTT] Error', err));
   return client;
 }
 
-module.exports = { startMqttSubscriber };
+module.exports = { startMqttSubscriber, TOPIC_POSTURE, TOPIC_TEMPERATURE, TOPIC_STATUS };

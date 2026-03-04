@@ -17,6 +17,11 @@ Adafruit_MPU6050 mpu2; // capteur bas du dos
 #define TONE_WARNING 700   // Hz — son discret
 #define TONE_BAD     1500  // Hz — son plus fort / urgent
 
+// Sonde de température (LM35 ou TMP36 sur A0 — 10 mV/°C, 0°C = 0 V)
+#define TEMP_PIN A0
+// Cycle type Deep Sleep : un envoi toutes les 10 s (sur ESP32 on utiliserait esp_deep_sleep)
+#define WAKE_INTERVAL_MS 10000
+
 void setup(void) {
   Serial.begin(115200);
   pinMode(VIBRATION_PIN, OUTPUT);
@@ -109,7 +114,16 @@ void loop() {
   
   Serial.print(",\"sensorHigh\":{"); printData(a1, g1); Serial.print("}");
   Serial.print(",\"sensorLow\":{"); printData(a2, g2); Serial.print("}");
+
+  // Température : lecture analogique A0 (LM35/TMP36), conversion en °C
+  int raw = analogRead(TEMP_PIN);
+  float voltage = (raw / 1023.0) * 5.0;
+  float tempC = (voltage - 0.5) * 100.0;  // TMP36: 0.5 V à 0°C
+  // LM35: tempC = voltage * 100.0;
+  Serial.print(",\"temperature\":"); Serial.print(tempC, 1);
+  Serial.print(",\"status\":\"up\"");  // up tant que le processeur est en marche
   Serial.println("}");
 
-  delay(200);
+  // Réveil toutes les 10 s (simule Deep Sleep sur ESP32)
+  delay(WAKE_INTERVAL_MS);
 }

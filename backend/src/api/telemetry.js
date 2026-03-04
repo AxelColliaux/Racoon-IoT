@@ -1,4 +1,4 @@
-const { insertTelemetry, insertPostureEvent, getRecentTelemetry, getRecentPostureEvents } = require('../db');
+const { insertTelemetry, insertPostureEvent, getRecentTelemetry, getRecentPostureEvents, insertSensorReading } = require('../db');
 const { detect } = require('../posture/detector');
 
 let broadcastPosture = () => {};
@@ -31,8 +31,40 @@ async function handleTelemetry(payload) {
     angleDiff,
   };
 
-  // Persistance : chaque position (télémétrie) est enregistrée en base
+  // Persistance : télémétrie legacy + time-series (posture)
   await insertTelemetry(row);
+  await insertSensorReading(
+    { deviceId, device_id: deviceId },
+    'posture',
+    {
+      ts: row.ts,
+      operator_id: operatorId,
+      zone,
+      activity: row.activity,
+      embedded_posture: row.embeddedPosture,
+      angle_diff: row.angleDiff,
+      accel_x: row.accel?.x,
+      accel_y: row.accel?.y,
+      accel_z: row.accel?.z,
+      gyro_x: row.gyro?.x,
+      gyro_y: row.gyro?.y,
+      gyro_z: row.gyro?.z,
+    }
+  ).catch(() => {});
+  if (body.temperature != null && !Number.isNaN(Number(body.temperature))) {
+    await insertSensorReading(
+      { deviceId, device_id: deviceId },
+      'temperature',
+      { ts: row.ts, temperature: Number(body.temperature), operator_id: operatorId, zone }
+    ).catch(() => {});
+  }
+  if (body.status != null) {
+    await insertSensorReading(
+      { deviceId, device_id: deviceId },
+      'status',
+      { ts: row.ts, status: String(body.status), operator_id: operatorId, zone }
+    ).catch(() => {});
+  }
 
   const result = detect(row);
   const message = {
@@ -70,7 +102,7 @@ function registerRoutes(app) {
       res.status(204).end();
     } catch (err) {
       console.error(err);
-      const status = err.message && err.message.includes('JSON') ? 400 : 500;
+      const status = err.message?.includes('JSON') ? 400 : 500;
       res.status(status).json({ error: err.message });
     }
   });
@@ -102,4 +134,9 @@ function registerRoutes(app) {
   });
 }
 
-module.exports = { registerRoutes, handleTelemetry, setBroadcast };
+async function handlePostureMessage(payloadStr) {
+  const body = typeof payloadStr === 'string' ? JSON.parse(payloadStr) : payloadStr;
+  await handleTelemetry(body);
+}
+
+module.exports = { registerRoutes, handleTelemetry, handlePostureMessage, setBroadcast };

@@ -3,6 +3,11 @@ const { MongoClient } = require('mongodb');
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.MONGODB_DB_NAME || 'smartposture';
 
+const SENSOR_TS_COLLECTION = 'sensor_readings_ts';
+const AGGREGATES_5M_COLLECTION = 'aggregates_5m';
+const RETENTION_MINUTES = 10;
+const AGGREGATION_BUCKET_MINUTES = 5;
+
 let client = null;
 let db = null;
 
@@ -24,7 +29,30 @@ async function connect() {
   await postureCol.createIndex({ ts: -1 }).catch(() => {});
   await postureCol.createIndex({ device_id: 1 }).catch(() => {});
 
+  await ensureTimeSeriesCollection();
+  await ensureAggregatesIndexes();
+
   return db;
+}
+
+async function ensureTimeSeriesCollection() {
+  const collections = await getDb().listCollections({ name: SENSOR_TS_COLLECTION }).toArray();
+  if (collections.length > 0) return;
+  await getDb().createCollection(SENSOR_TS_COLLECTION, {
+    timeseries: {
+      timeField: 'ts',
+      metaField: 'meta',
+      granularity: 'seconds',
+    },
+    expireAfterSeconds: RETENTION_MINUTES * 60,
+  });
+}
+
+async function ensureAggregatesIndexes() {
+  const col = getDb().collection(AGGREGATES_5M_COLLECTION);
+  await col.createIndex({ bucket: -1 }).catch(() => {});
+  await col.createIndex({ 'meta.device_id': 1, bucket: -1 }).catch(() => {});
+  await col.createIndex({ bucket: -1, 'meta.device_id': 1 }).catch(() => {});
 }
 
 function getDb() {
@@ -149,6 +177,89 @@ async function deleteVest(vestId) {
   return result.deletedCount > 0;
 }
 
+/* ── Time-Series (sensors/alerts/config) ─────────────────────────── */
+
+function sensorTsCol() {
+  return getDb().collection(SENSOR_TS_COLLECTION);
+}
+
+function aggregates5mCol() {
+  return getDb().collection(AGGREGATES_5M_COLLECTION);
+}
+
+function toDate(ts) {
+  if (ts instanceof Date) return ts;
+  if (typeof ts === 'number') return new Date(ts);
+  return new Date();
+}
+
+async function insertSensorReading(meta, type, fields) {
+  const { ts: _ts, ...rest } = fields;
+  const doc = {
+    ts: toDate(_ts ?? Date.now()),
+    meta: {
+      device_id: meta.deviceId ?? meta.device_id ?? null,
+      type,
+    },
+    ...rest,
+  };
+  await sensorTsCol().insertOne(doc);
+}
+
+async function runAggregationAndRetention() {
+  const now = new Date();
+  const bucketMs = AGGREGATION_BUCKET_MINUTES * 60 * 1000;
+  const bucketStart = new Date(Math.floor(now.getTime() / bucketMs) * bucketMs - bucketMs);
+  const bucketEnd = new Date(bucketStart.getTime() + bucketMs);
+  const col = sensorTsCol();
+  const aggCol = aggregates5mCol();
+
+  const pipeline = [
+    { $match: { ts: { $gte: bucketStart, $lt: bucketEnd } } },
+    {
+      $group: {
+        _id: { device_id: '$meta.device_id', type: '$meta.type' },
+        bucket: { $first: bucketStart },
+        count: { $sum: 1 },
+        avg_temperature: { $avg: '$temperature' },
+        min_temperature: { $min: '$temperature' },
+        max_temperature: { $max: '$temperature' },
+      },
+    },
+    {
+      $project: {
+        bucket: 1,
+        meta: { device_id: '$_id.device_id', type: '$_id.type' },
+        count: 1,
+        avg_temperature: 1,
+        min_temperature: 1,
+        max_temperature: 1,
+      },
+    },
+  ];
+  const cursor = col.aggregate(pipeline);
+  const results = await cursor.toArray();
+  if (results.length > 0) {
+    const docs = results.map((r) => ({
+      ts: r.bucket,
+      bucket: r.bucket,
+      meta: r.meta,
+      count: r.count,
+      avg_temperature: r.avg_temperature,
+      min_temperature: r.min_temperature,
+      max_temperature: r.max_temperature,
+    }));
+    await aggCol.insertMany(docs);
+  }
+}
+
+async function getRecentAggregates(limit = 100, deviceId = null) {
+  const col = aggregates5mCol();
+  const filter = deviceId ? { 'meta.device_id': deviceId } : {};
+  const cursor = col.find(filter).sort({ bucket: -1 }).limit(limit);
+  return cursor.toArray();
+}
+
 module.exports = {
   connect,
   getDb,
@@ -160,4 +271,11 @@ module.exports = {
   getAllVests,
   updateVest,
   deleteVest,
+  insertSensorReading,
+  runAggregationAndRetention,
+  getRecentAggregates,
+  SENSOR_TS_COLLECTION,
+  AGGREGATES_5M_COLLECTION,
+  RETENTION_MINUTES,
+  AGGREGATION_BUCKET_MINUTES,
 };

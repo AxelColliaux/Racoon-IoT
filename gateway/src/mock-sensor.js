@@ -28,13 +28,15 @@ function generateSample(postureKey = 'normal', ts = Date.now()) {
     gyro: { x: gx, y: gy, z: gz },
     ts,
     posture: p.name,
+    temperature: 20 + Math.random() * 10,
+    status: 'up',
   };
 }
 
 const POSTURE_KEYS = ['normal', 'normal', 'bent_forward', 'normal', 'bent_lateral', 'normal', 'twist'];
 
 function runMockGenerator(onSample, options = {}) {
-  const intervalMs = options.intervalMs ?? 200;
+  const intervalMs = options.intervalMs ?? 10000;
   let i = 0;
   const timer = setInterval(() => {
     const key = POSTURE_KEYS[i % POSTURE_KEYS.length];

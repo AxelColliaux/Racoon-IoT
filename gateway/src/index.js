@@ -38,6 +38,11 @@ function normalizeSample(data) {
       deviceId,
       operatorId,
       zone,
+      activity: data.activity,
+      embeddedPosture: data.embeddedPosture ?? data.posture,
+      angleDiff: data.angleDiff,
+      temperature: data.temperature != null ? Number(data.temperature) : undefined,
+      status: data.status ?? 'up',
     };
   }
   
@@ -73,6 +78,8 @@ function normalizeSample(data) {
       activity: data.activity,
       embeddedPosture: data.posture,
       angleDiff: data.angle_diff,
+      temperature: data.temperature != null ? Number(data.temperature) : undefined,
+      status: data.status ?? 'up',
     };
   }
 

@@ -5,6 +5,7 @@ const cors = require('cors');
 const { WebSocketServer } = require('ws');
 const { connect } = require('./db');
 const { registerRoutes, setBroadcast } = require('./api/telemetry');
+const { registerRoutes: registerAggregatesRoutes, startAggregationJob } = require('./api/sensor-timeseries');
 const { registerVestRoutes } = require('./api/vests');
 const { registerAuthRoutes } = require('./auth/routes');
 const { authenticateToken } = require('./auth/middleware');
@@ -25,9 +26,9 @@ registerAuthRoutes(app);
 // POST /api/telemetry is left open for gateway ingestion (server-to-server)
 app.get('/api/telemetry', authenticateToken);
 app.get('/api/posture-events', authenticateToken);
-app.use('/api/vests', authenticateToken);
-
+app.get('/api/aggregates', authenticateToken);
 registerRoutes(app);
+registerAggregatesRoutes(app);
 registerVestRoutes(app);
 
 const server = http.createServer(app);
@@ -50,6 +51,7 @@ function broadcast(data) {
 setBroadcast(broadcast);
 
 startMqttSubscriber(process.env.MQTT_BROKER);
+startAggregationJob();
 
 async function start() {
   await connect();
