@@ -2,7 +2,7 @@
 
 ## Recommandation d’emplacement
 
-L’unité électronique (microcontrôleur + capteur(s) MPU-6050) est positionnée au **haut du dos, entre les omoplates**, au centre du gilet. Le montage peut utiliser **deux** MPU-6050 (même bus I2C, adresses 0x68 et 0x69) pour améliorer la précision.
+L’unité électronique (microcontrôleur) est positionnée dans une poche à l'avant du gilet. Le montage utilise **deux** MPU-6050 (même bus I2C, adresses 0x68 et 0x69) pour améliorer la précision.
 
 **Placement des 2 capteurs sur le corps (recommandé)** :
 - **Capteur 1 (I2C 0x68)** : **entre les omoplates**, au centre du haut du dos — mesure l’inclinaison du haut du tronc.
@@ -14,16 +14,17 @@ Les deux positions (omoplates + lombaires) permettent de mieux capturer la postu
 
 - **Représentativité de la posture** : Le tronc est la référence pour les TMS (flexion, inclinaison latérale, torsion). Un capteur au dos mesure directement l’orientation du torse par rapport à la gravité.
 - **Limitation des artefacts** : Un placement sur le bras ou le torse avant serait plus sensible aux mouvements des membres. Le haut du dos reste stable pour les tâches de manutention typiques.
-- **Confort** : Une poche dédiée ou une bande élastique entre les omoplates limite le contact avec la peau et évite les points de pression. Le câblage peut longer la colonne vers une poche batterie en bas de dos ou sur le côté.
+- **Confort** : Une poche dédiée ou une bande élastique entre les omoplates limite le contact avec la peau et évite les points de pression. Le câblage peut rejoindre la face avant du gilet en passant par l'épaule jusqu'à la poche du microcontrôleur.
 - **Orientation des axes** : Pour une interprétation cohérente, l’axe Z du MPU-6050 est aligné avec la verticale (vers le haut) lorsque l’opérateur est debout. X et Y permettent alors de dériver l’inclinaison avant/arrière et latérale.
 
 ## Croquis
 
-Le fichier [vest-placement.svg](./vest-placement.svg) illustre la vue arrière du gilet avec :
-
-- L’emplacement du boîtier (rectangle entre les omoplates).
+Le fichier [docs/croquis_vue_de_dos.png](docs/croquis_vue_de_dos.png) illustre la vue arrière du gilet avec :
 - L’orientation schématique des axes du capteur (X, Y, Z).
-- Éventuellement le trajet du câble vers l’alimentation / module Bluetooth.
+
+Le fichier [docs/croquis_vue_de_face.png](docs/croquis_vue_de_face.png) illustre la vue avant du gilet avec :
+ - L’emplacement du boîtier (rectangle entre les omoplates).
+ - L'emplacement du système de vibration en cas de mauvaise posture
 
 ## Référence pour le firmware
 

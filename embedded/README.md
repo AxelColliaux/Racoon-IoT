@@ -5,8 +5,7 @@ Code Arduino pour le gilet connecté CorpSafe v1. Lecture accéléromètre / gyr
 ## Simulateur
 
 - **Wokwi (navigateur)** : [Créer un projet](https://wokwi.com/projects/new/arduino-uno), importer ou coller le code de `smartposture.ino` et le contenu de `diagram.json` (Arduino Uno + MPU6050 câblé en I2C). Démarrer la simulation puis ouvrir le Serial Monitor (115200 baud) : les lignes JSON s’affichent. Ne pas utiliser `while (!Serial)` dans le code (bloque dans le simulateur).
-- **Lien projet partagé** : après sauvegarde sur Wokwi, ajouter l’URL ici et dans le README racine du dépôt.
-  - Exemple : `https://wokwi.com/projects/xxxxxxxx`
+- **Lien projet partagé** : [`https://wokwi.com/projects/457485083251344385`](https://wokwi.com/projects/457485083251344385)
 
 ## Câblage (si MPU-6050 utilisé dans le simulateur)
 

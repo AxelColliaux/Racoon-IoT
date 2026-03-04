@@ -17,8 +17,8 @@ POC complet d’un **gilet connecté d’analyse posturale** pour SafeWear Techn
 ## Dépôt
 
 - **Documentation** : [docs/data-flow.md](docs/data-flow.md), [docs/technology-choices.md](docs/technology-choices.md), [docs/vest-placement.md](docs/vest-placement.md)
-- **Croquis gilet** : [docs/vest-placement.svg](docs/vest-placement.svg)
-- **Simulateur** : voir [embedded/README.md](embedded/README.md) ; après création du projet sur [Wokwi](https://wokwi.com/projects/new/arduino-uno), ajouter le lien partagé dans `embedded/README.md` et ici.
+- **Croquis gilet** : [docs/croquis_vue_de_face.png](docs/croquis_vue_de_face.png), [docs/croquis_vue_de_dos.png](docs/croquis_vue_de_dos.png)
+- **Simulateur** : [`https://wokwi.com/projects/457485083251344385`](https://wokwi.com/projects/457485083251344385)
 
 ## Prérequis
 
@@ -113,7 +113,7 @@ Sans l’étape 3, le port TCP 4000 s’ouvre mais aucun flux série n’est env
 | Code source et instructions | Ce dépôt (README, README de chaque module) |
 | Lien simulateur | [embedded/README.md](embedded/README.md) (à compléter avec l’URL du projet Wokwi) |
 | Vidéo de démo (2–3 min) | À enregistrer et héberger ; ajouter le lien ici. |
-| Croquis gilet + justification | [docs/vest-placement.md](docs/vest-placement.md), [docs/vest-placement.svg](docs/vest-placement.svg) |
+| Croquis gilet + justification | [docs/vest-placement.md](docs/vest-placement.md), [docs/croquis_vue_de_face.png](docs/croquis_vue_de_face.png), [docs/croquis_vue_de_dos.png](docs/croquis_vue_de_dos.png) |
 
 ## Vidéo de démonstration
 
