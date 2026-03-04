@@ -71,18 +71,21 @@ void loop() {
   // Différence d’angle entre haut du dos (capteur droit) et bas du dos (capteur gauche)
   // Les deux capteurs ont ainsi un effet sur la posture.
   // Difference pitch + roll entre les 2 capteurs — les deux ont un effet direct
-  float deltaPitch = abs(pitchHigh - pitchLow);
-  float deltaRoll  = abs(rollHigh - rollLow);
+  float deltaPitch = abs(pitchHigh + pitchLow);
+  float deltaRoll  = abs(rollHigh + rollLow);
   float deltaAngle = sqrt(deltaPitch * deltaPitch + deltaRoll * deltaRoll);
   String posture = "GOOD_POSTURE";
 
-  float warningFloor = 16.0f;
-  float badPostureFloor = 30.0f;
+  float warningFloor = 27;
+  float badPostureFloor = 50;
+
+
+  if (deltaAngle > warningFloor) {
+    posture = "WARNING";
+  }
 
   if (deltaAngle > badPostureFloor) {
     posture = "BAD_POSTURE";
-  } else if (deltaAngle > warningFloor) {
-    posture = "WARNING";
   }
 
   // Contrôle du moteur de vibration

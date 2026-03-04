@@ -7,8 +7,8 @@ function registerVestRoutes(app) {
    */
   app.post('/api/vests', async (req, res) => {
     try {
-      const { label, operator, zone } = req.body;
-      const doc = await registerVest({ label, operator, zone });
+      const { vestId, label, operator, zone } = req.body;
+      const doc = await registerVest({ vestId, label, operator, zone });
       res.status(201).json(doc);
     } catch (err) {
       if (err.code === 11000) {

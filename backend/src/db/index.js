@@ -105,7 +105,10 @@ async function nextVestId() {
 
 async function registerVest(vest) {
   const col = vestsCol();
-  const vestId = await nextVestId();
+  const vestId =
+    vest.vestId && String(vest.vestId).trim() !== ''
+      ? String(vest.vestId).trim()
+      : await nextVestId();
   const doc = {
     vest_id: vestId,
     label: vest.label || vestId,

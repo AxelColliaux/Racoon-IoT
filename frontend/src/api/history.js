@@ -53,6 +53,7 @@ export async function fetchPostureEventsHistory(limit = 50) {
   const rows = await res.json();
   return rows.map((r) => ({
     id: `persisted-${r.id}`,
+    deviceId: r.device_id ?? null,
     postureType: r.posture_type,
     severity: r.severity,
     tiltForward: r.tilt_forward_deg,

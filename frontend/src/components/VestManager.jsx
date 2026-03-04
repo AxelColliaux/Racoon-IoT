@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { registerVest, deleteVest } from '../api/vests';
 
-export function VestManager({ vests, onRefresh }) {
+export function VestManager({ vests, onRefresh, availableDeviceIds = [] }) {
   const [open, setOpen] = useState(false);
+  const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [label, setLabel] = useState('');
   const [operator, setOperator] = useState('');
   const [zone, setZone] = useState('');
@@ -13,12 +14,20 @@ export function VestManager({ vests, onRefresh }) {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log({
+      vestId: selectedDeviceId.trim() || undefined,
+      label: label.trim() || undefined,
+      operator: operator.trim() || undefined,
+      zone: zone.trim() || undefined,
+    });
     try {
       await registerVest({
+        vestId: selectedDeviceId.trim() || undefined,
         label: label.trim() || undefined,
         operator: operator.trim() || undefined,
         zone: zone.trim() || undefined,
       });
+      setSelectedDeviceId('');
       setLabel('');
       setOperator('');
       setZone('');
@@ -68,12 +77,30 @@ export function VestManager({ vests, onRefresh }) {
 
       {open && (
         <form className="vest-form" onSubmit={handleAdd}>
+          {availableDeviceIds.length > 0 && (
+            <div className="vest-form-row">
+              <label htmlFor="vest-device-select">Lier à un device détecté (optionnel)</label>
+              <select
+                id="vest-device-select"
+                value={selectedDeviceId}
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                className="vest-device-select"
+              >
+                <option value="">— Nouveau gilet (ID auto, ex. V-001) —</option>
+                {availableDeviceIds.map((did) => (
+                  <option key={did} value={did}>
+                    {did} — gilet non lié
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <input
             type="text"
             placeholder="Nom / label"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            autoFocus
+            autoFocus={availableDeviceIds.length === 0}
           />
           <input
             type="text"
@@ -87,10 +114,14 @@ export function VestManager({ vests, onRefresh }) {
             value={zone}
             onChange={(e) => setZone(e.target.value)}
           />
-          <p className="vest-hint">L'ID du gilet sera attribué automatiquement (ex : V-001)</p>
+          <p className="vest-hint">
+            {selectedDeviceId
+              ? `Le gilet sera enregistré avec l'ID du device : ${selectedDeviceId}`
+              : "L'ID du gilet sera attribué automatiquement (ex : V-001)"}
+          </p>
           {error && <p className="vest-error">{error}</p>}
           <button type="submit" disabled={loading}>
-            {loading ? '...' : 'Enregistrer'}
+            {loading ? '...' : selectedDeviceId ? 'Lier et enregistrer' : 'Enregistrer'}
           </button>
         </form>
       )}

@@ -113,6 +113,12 @@ export default function Dashboard() {
     return merged;
   }, [isAll, filterVests, history, perVestHistory]);
 
+  // Device IDs vus en direct (WebSocket) mais pas encore enregistrés comme gilet
+  const availableDeviceIds = useMemo(() => {
+    const registeredIds = new Set(vests.map((v) => v.vest_id));
+    return Object.keys(vestStates).filter((did) => !registeredIds.has(did));
+  }, [vests, vestStates]);
+
   // Build unified list of vest options (registered + live unregistered)
   const filterOptions = useMemo(() => {
     const registeredIds = new Set(vests.map((v) => v.vest_id));
@@ -184,7 +190,11 @@ export default function Dashboard() {
 
       {/* ── VEST MANAGER ───────────────────────────────────────── */}
       <section className="card">
-        <VestManager vests={vests} onRefresh={loadVests} />
+        <VestManager
+          vests={vests}
+          onRefresh={loadVests}
+          availableDeviceIds={availableDeviceIds}
+        />
       </section>
 
       {/* ── VEST FILTER BAR ────────────────────────────────────── */}
@@ -226,6 +236,7 @@ export default function Dashboard() {
               {displayedVests.length > 0 ? (
                 displayedVests.map((v) => {
                   const state = vestStates[v.vest_id];
+                  console.log(state);
                   const sev = severityOf(state);
                   return (
                     <tr key={v.vest_id} className={`row-severity-${sev}`}>
@@ -276,7 +287,9 @@ export default function Dashboard() {
               {filteredAlerts.slice(0, 30).map((a, i) => (
                 <li key={a.id || i}>
                   <span className="journal-time">{fmtTime(a.ts)}</span>
-                  <span className="journal-device">{a.deviceId || '—'}</span>
+                  <span className="journal-device" title="ID du gilet">
+                    🦺 {a.deviceId || '—'}
+                  </span>
                   <span className="journal-type">{postureLabel(a.postureType)}</span>
                   <span className="journal-detail">
                     {a.severity === 'alert' ? '🔴' : '🟡'}{' '}
@@ -289,15 +302,18 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── 3D SIMULATION ──────────────────────────────────────── */}
+      {/* ── 3D SIMULATION (uniquement si un gilet est sélectionné) ── */}
       <section className="card simulation-card">
         <div className="sim-header">
           <h2>🧍 Simulation 3D</h2>
-          {displayedOptions.length > 1 && (
+          {!isAll && displayedOptions.length > 1 && (
             <select
               className="sim-select"
               value={simVest}
-              onChange={(e) => setSimVest(e.target.value)}
+              onChange={(e) => {
+                setSimVest(e.target.value)
+                console.log(vests)
+              }}
             >
               {displayedOptions.map((opt) => (
                 <option key={opt.id} value={opt.id}>
@@ -306,16 +322,28 @@ export default function Dashboard() {
               ))}
             </select>
           )}
-          {displayedOptions.length === 1 && (
+          {!isAll && displayedOptions.length === 1 && (
             <span className="sim-vest-tag">{displayedOptions[0].id}</span>
           )}
         </div>
-        <VestSimulation3D posture={simPosture} />
+        {isAll ? (
+          <p className="sim-placeholder">
+            Sélectionnez un gilet dans le filtre ci-dessus pour afficher la simulation 3D.
+          </p>
+        ) : (
+          <VestSimulation3D posture={simPosture} />
+        )}
       </section>
 
-      {/* ── CHART ──────────────────────────────────────────────── */}
+      {/* ── Évolution des angles (uniquement si un gilet est sélectionné) ── */}
       <section className="card chart-card">
-        <PostureChart history={filteredHistory} />
+        {isAll ? (
+          <p className="chart-placeholder">
+            Sélectionnez un gilet dans le filtre ci-dessus pour afficher l'évolution des angles.
+          </p>
+        ) : (
+          <PostureChart history={filteredHistory} />
+        )}
       </section>
     </>
   );

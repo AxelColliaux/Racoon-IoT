@@ -9,12 +9,12 @@ export async function fetchVests() {
   return res.json();
 }
 
-/** POST /api/vests */
-export async function registerVest({ label, operator, zone }) {
+/** POST /api/vests — vestId optionnel : si fourni, enregistre le gilet avec l'ID du device (ex. Arduino) */
+export async function registerVest({ vestId, label, operator, zone }) {
   const res = await authFetch(`${API_BASE}/api/vests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ label, operator, zone }),
+    body: JSON.stringify({ vestId: vestId || undefined, label, operator, zone }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Failed to register vest');

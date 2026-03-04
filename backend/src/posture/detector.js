@@ -15,10 +15,10 @@ function accelToTiltDeg(ax, ay, az) {
 }
 
 const THRESHOLDS = {
-  forwardWarning: 25,
-  forwardAlert: 45,
-  lateralWarning: 20,
-  lateralAlert: 35,
+  forwardWarning: 16,
+  forwardAlert: 31,
+  lateralWarning: 15,
+  lateralAlert: 30,
 };
 const SUSTAINED_MS = 1500;
 const state = { lastAlert: null, sustainedSince: null };

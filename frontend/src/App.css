@@ -312,6 +312,30 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.vest-form-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.vest-form-row label {
+  font-size: 0.85rem;
+  color: var(--color-muted, #94a3b8);
+}
+.vest-device-select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  cursor: pointer;
+}
+.vest-device-select:focus {
+  border-color: #3b82f6;
+}
+
 .vest-form input {
   padding: 0.55rem 0.75rem;
   border-radius: 8px;
@@ -652,6 +676,14 @@
 
 .simulation-card {
   min-height: 480px;
+}
+
+.sim-placeholder {
+  color: var(--color-muted, #64748b);
+  font-size: 0.9rem;
+  padding: 2rem;
+  text-align: center;
+  margin: 0;
 }
 
 /* ── Filter bar ─────────────────────────────────────────────── */
