@@ -12,7 +12,7 @@ POC complet d’un **gilet connecté d’analyse posturale** pour SafeWear Techn
 | -------------- | ----------------------------------------------------------------------------------------------------------- |
 | **Physique**   | Microcontrôleur Arduino simulé, capteur MPU-6050 (accel + gyro) ou données simulées, sortie JSON sur Serial |
 | **Passerelle** | Pont Node.js : Serial / TCP (Wokwi for VS Code) / générateur mock → envoi HTTP ou MQTT vers le backend      |
-| **Cloud**      | API REST + WebSocket, base SQLite, moteur de détection de posture (règles à seuils)                         |
+| **Cloud**      | API REST + WebSocket, base MongoDB, moteur de détection de posture (règles à seuils)                         |
 | **Client**     | Dashboard React (Vite) : posture temps réel, alertes, graphique d’évolution des angles                      |
 
 
